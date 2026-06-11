@@ -6,67 +6,259 @@
 <title>Yu-Gi-Oh Server Hub</title>
 
 <style>
-  body {
-    margin: 0;
-    font-family: system-ui;
-    background: #0f1220;
-    color: #e8ecff;
-    display: flex;
-    justify-content: center;
+  :root {
+    --bg: #0f1220;
+    --panel: rgba(23, 26, 43, 0.75);
+    --text: #e8ecff;
+    --muted: #aab2d5;
+    --accent: #8b5cf6;
   }
 
-  .container {
-    width: 100%;
-    max-width: 900px;
-    padding: 20px;
+  body.light {
+    --bg: #f5f7ff;
+    --panel: rgba(255, 255, 255, 0.8);
+    --text: #1c1f2e;
+    --muted: #5a607a;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, Arial, sans-serif;
+    background: radial-gradient(circle at top, #1a1f3a, var(--bg));
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* Floating glow orbs */
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    background: var(--accent);
+    filter: blur(120px);
+    opacity: 0.15;
+    z-index: 0;
+  }
+
+  body::before { top: -100px; left: -100px; }
+  body::after { bottom: -150px; right: -120px; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
   h1 {
-    margin-bottom: 10px;
+    font-size: 16px;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    transform: scale(1.05);
+    border-color: var(--accent);
+  }
+
+  .nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+    position: relative;
+    z-index: 2;
   }
 
   .card {
-    background: #171a2b;
-    padding: 15px;
-    border-radius: 12px;
-    margin: 10px 0;
+    background: var(--panel);
     border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
   }
 
-  a {
-    display: block;
-    color: #4da3ff;
-    text-decoration: none;
-    margin-top: 8px;
+  .card h2 {
+    font-size: 14px;
+    margin: 0;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    color: var(--muted);
   }
 
-  a:hover {
-    text-decoration: underline;
+  iframe {
+    width: 100%;
+    height: 700px;
+    border: none;
+    background: white;
   }
 
-  .small {
-    opacity: 0.7;
-    font-size: 13px;
+  /* -----------------------------
+     FLOATING CARDS (NEW FEATURE)
+  ------------------------------*/
+
+  .floating-card {
+    position: fixed;
+    width: 120px;
+    height: 170px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    cursor: pointer;
+    opacity: 0.85;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    z-index: 1;
+    user-select: none;
+  }
+
+  .floating-card:hover {
+    transform: scale(1.05) rotate(0deg);
+    opacity: 1;
+  }
+
+  .left-stack {
+    left: 10px;
+    top: 120px;
+  }
+
+  .right-stack {
+    right: 10px;
+    top: 120px;
+  }
+
+  .float {
+    animation: floaty 6s ease-in-out infinite;
+  }
+
+  @keyframes floaty {
+    0%   { transform: translateY(0px) rotate(var(--r)); }
+    50%  { transform: translateY(-10px) rotate(calc(var(--r) + 2deg)); }
+    100% { transform: translateY(0px) rotate(var(--r)); }
+  }
+
+  @media (min-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    iframe {
+      height: 750px;
+    }
   }
 </style>
 </head>
 
 <body>
-<div class="container">
 
-  <h1>⚡ Yu-Gi-Oh Server Hub</h1>
-  <div class="small">Central dashboard for all server systems</div>
+<header>
+  <h1>Yu-Gi-Oh Server Hub</h1>
+
+  <div class="nav">
+    <a class="link" href="https://pazeyellow.github.io/Webapp/" target="_blank">Banlist ↗</a>
+    <a class="link" href="https://pazeyellow.github.io/CCF-Events-Calendar/" target="_blank">Calendar ↗</a>
+    <button onclick="toggleTheme()">🌗</button>
+  </div>
+</header>
+
+<!-- FLOATING CARDS -->
+<img class="floating-card left-stack float" id="cardLeft" />
+<img class="floating-card right-stack float" id="cardRight" />
+
+<div class="grid">
 
   <div class="card">
     <h2>📅 Events Calendar</h2>
-    <a href="calendar.html">Open Calendar →</a>
+    <iframe src="https://pazeyellow.github.io/CCF-Events-Calendar/"></iframe>
   </div>
 
   <div class="card">
-    <h2>🔴 Banlist System</h2>
-    <a href="banlist.html">Open Banlist →</a>
+    <h2>🔴 Banlist</h2>
+    <iframe src="https://pazeyellow.github.io/Webapp/"></iframe>
   </div>
 
 </div>
+
+<script>
+const images = [
+  "images/card1.jpg",
+  "images/card2.jpg",
+  "images/card3.jpg",
+  "images/card4.jpg",
+  "images/card5.jpg"
+];
+
+function randomCard() {
+  return images[Math.floor(Math.random() * images.length)];
+}
+
+function setCard(el) {
+  el.style.opacity = "0";
+  setTimeout(() => {
+    el.src = randomCard();
+    el.style.opacity = "0.9";
+  }, 250);
+}
+
+function initCards() {
+  const left = document.getElementById("cardLeft");
+  const right = document.getElementById("cardRight");
+
+  left.src = randomCard();
+  right.src = randomCard();
+
+  left.style.setProperty("--r", "-6deg");
+  right.style.setProperty("--r", "6deg");
+
+  left.addEventListener("click", () => setCard(left));
+  right.addEventListener("click", () => setCard(right));
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+(function loadTheme(){
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+  }
+})();
+
+initCards();
+</script>
+
 </body>
 </html>
