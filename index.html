@@ -7,45 +7,57 @@
 
 <style>
 :root {
-  --bg: #0f1220;
-  --panel: rgba(20, 23, 40, 0.72);
+  --bg: #0b0d19;
+  --bg-gradient: radial-gradient(circle at top, #1a1f3a, #0b0d19);
+  --panel: rgba(20, 23, 40, 0.65);
+  --panel-border: rgba(255, 255, 255, 0.08);
   --text: #e8ecff;
   --muted: #aab2d5;
   --accent: #8b5cf6;
+  --accent-glow: rgba(139, 92, 246, 0.12);
+  --discord: #5865F2;
 }
 
 body.light {
-  --bg: #f5f7ff;
-  --panel: rgba(255, 255, 255, 0.85);
-  --text: #1c1f2e;
-  --muted: #5a607a;
+  --bg: #f4f6fa;
+  --bg-gradient: radial-gradient(circle at top, #e3e8f8, #f4f6fa);
+  --panel: rgba(255, 255, 255, 0.75);
+  --panel-border: rgba(0, 0, 0, 0.06);
+  --text: #1a1d29;
+  --muted: #5c6484;
+  --accent: #6d28d9;
+  --accent-glow: rgba(109, 40, 217, 0.06);
 }
 
 body {
   margin: 0;
-  font-family: system-ui, Arial, sans-serif;
-  background: radial-gradient(circle at top, #1a1f3a, var(--bg));
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text);
   overflow-x: hidden;
+  line-height: 1.5;
 }
 
-/* glow */
+/* Background Ambient Glows */
 body::before,
 body::after {
   content: "";
   position: fixed;
-  width: 450px;
-  height: 450px;
+  width: 500px;
+  height: 500px;
   background: var(--accent);
-  filter: blur(130px);
-  opacity: 0.12;
+  filter: blur(140px);
+  opacity: var(--accent-glow-opacity, 0.15);
   z-index: 0;
+  pointer-events: none;
+  transition: background 0.3s, opacity 0.3s;
 }
+body.light::before, body.light::after { --accent-glow-opacity: 0.07; }
+body::before { top: -150px; left: -150px; }
+body::after { bottom: -200px; right: -150px; }
 
-body::before { top: -120px; left: -120px; }
-body::after { bottom: -160px; right: -140px; }
-
-/* header */
+/* Header */
 header {
   position: sticky;
   top: 0;
@@ -53,32 +65,75 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 16px 24px;
   background: var(--panel);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--panel-border);
 }
 
-h1 {
-  font-size: 15px;
+.header-brand h1 {
+  font-size: 18px;
+  font-weight: 700;
   margin: 0;
+  letter-spacing: -0.5px;
 }
 
-/* button */
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Buttons & Links */
 button {
   background: transparent;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--panel-border);
   color: var(--text);
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-/* layout */
+button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.03);
+}
+
+body.light button:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.btn-discord {
+  background: var(--discord);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-discord:hover {
+  background: #4752c4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+}
+
+/* Layout Container */
 .container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 18px;
+  max-width: 850px;
+  margin: 40px auto;
+  padding: 0 24px;
   position: relative;
   z-index: 2;
 }
@@ -86,72 +141,114 @@ button {
 .grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 20px;
 }
 
-@media (min-width: 800px) {
+@media (min-width: 650px) {
   .grid {
     grid-template-columns: 1fr 1fr;
   }
+  .grid-full {
+    grid-column: span 2;
+  }
 }
 
-/* cards */
+/* Cards Styling */
 .card {
   background: var(--panel);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 24px;
   backdrop-filter: blur(12px);
-  transition: 0.2s;
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px var(--accent-glow);
 }
 
-.card a {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.4);
+.card h2 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card p {
+  margin: 0 0 20px 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.card .card-action {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(139, 92, 246, 0.25);
   color: var(--text);
   text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
-/* FLOATING CARDS */
+.card .card-action:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Floating Yu-Gi-Oh Cards */
 .floating-card {
   position: fixed;
-  width: 110px;
-  height: 160px;
+  width: 140px;
+  height: 204px;
   object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.45);
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   cursor: pointer;
-  opacity: 0.85;
-  z-index: 1;
+  z-index: 5;
+  transition: opacity 0.3s ease, transform 0.2s ease;
 }
 
-.left { left: 10px; top: 120px; }
-.right { right: 10px; top: 120px; }
+.floating-card:hover {
+  transform: scale(1.08) rotate(0deg) !important;
+  z-index: 6;
+}
 
+/* Responsive Placement for Floating Cards */
+@media (min-width: 1300px) {
+  /* Aligns perfectly to the outer left and right of the main card box */
+  .left { left: calc(50% - 630px); top: 180px; }
+  .right { right: calc(50% - 630px); top: 180px; }
+}
+
+@media (max-width: 1299px) {
+  /* Hides elements entirely on small screens/laptops to completely stop layout overlapping */
+  .floating-card {
+    display: none;
+  }
+}
+
+/* Float Animations */
 .float {
   animation: floaty 6s ease-in-out infinite;
 }
 
 @keyframes floaty {
   0%   { transform: translateY(0px) rotate(var(--r)); }
-  50%  { transform: translateY(-10px) rotate(calc(var(--r) + 2deg)); }
+  50%  { transform: translateY(-12px) rotate(calc(var(--r) + 1.5deg)); }
   100% { transform: translateY(0px) rotate(var(--r)); }
-}
-
-/* hide on mobile */
-@media (max-width: 600px) {
-  .floating-card {
-    display: none;
-  }
 }
 </style>
 </head>
@@ -159,60 +256,85 @@ button {
 <body>
 
 <header>
-  <h1>Yu-Gi-Oh Server Hub</h1>
-  <button onclick="toggleTheme()">🌗</button>
+  <div class="header-brand">
+    <h1>Yu-Gi-Oh Server Hub</h1>
+  </div>
+  <div class="header-actions">
+    <a href="https://discord.gg/arWVaBH9U5" target="_blank" class="btn-discord">
+      <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.72-10.93,68.6,68.6,0,0,1-10.64-5.12c.91-.67,1.81-1.37,2.65-2.1a75.22,75.22,0,0,0,72.94,0c.84.73,1.74,1.43,2.65,2.1a68.86,68.86,0,0,1-10.64,5.12,74.74,74.74,0,0,0,6.72,10.93,105.73,105.73,0,0,0,31.62-18.83C129.54,50.13,123.63,27.35,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.94,46,53.8,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.17,46,96,53,91,65.69,84.69,65.69Z"/></svg>
+      Discord
+    </a>
+    <button onclick="toggleTheme()" aria-label="Toggle Theme">🌗</button>
+  </div>
 </header>
 
-<img class="floating-card left float" id="cardLeft" />
-<img class="floating-card right float" id="cardRight" />
+<img class="floating-card left float" id="cardLeft" alt="Yu-Gi-Oh Card Left" />
+<img class="floating-card right float" id="cardRight" alt="Yu-Gi-Oh Card Right" />
 
 <div class="container">
-
   <div class="grid">
 
     <div class="card">
-      <h2>📅 Calendar</h2>
-      <p>View upcoming events and tournaments.</p>
-      <a href="calendar.html">Open Calendar →</a>
+      <div>
+        <h2>📅 Calendar</h2>
+        <p>Keep track of upcoming community events, local tournament dates, and special server matches.</p>
+      </div>
+      <a href="calendar.html" class="card-action">Open Calendar →</a>
     </div>
 
     <div class="card">
-      <h2>🔴 Banlist</h2>
-      <p>Check current format legality updates.</p>
-      <a href="banlist.html">Open Banlist →</a>
+      <div>
+        <h2>🔴 Banlist</h2>
+        <p>Review current competitive format legalities, historical shifts, and community format alterations.</p>
+      </div>
+      <a href="banlist.html" class="card-action">Open Banlist →</a>
+    </div>
+
+    <div class="card grid-full" style="border-color: rgba(88, 101, 242, 0.255);">
+      <div>
+        <h2>💬 Join Our Community</h2>
+        <p>Connect with other duelists, share decklists, test new strategies, and participate in real-time matchups over on our dedicated Discord server.</p>
+      </div>
+      <a href="https://discord.gg/arWVaBH9U5" target="_blank" class="card-action" style="background: var(--discord); color: white; border: none;">
+        Join Discord Server →
+      </a>
     </div>
 
   </div>
-
 </div>
 
 <script>
-/* =========================
-   RANDOM IMAGE LOADER FIX
-   ========================= */
+/* ====================================
+   IMAGE ARRAY CONFIGURATION
+   ==================================== */
+// Your exact asset list. Supports mixed formats (.jpg and .png) effortlessly.
+const VALID_IMAGES = [
+  "1.jpg",
+  "10.jpg",
+  "11.jpg",
+  "2.jpg",
+  "3.png",
+  "4.png",
+  "5.png",
+  "6.png",
+  "7.png",
+  "8.png",
+  "9.jpg"
+];
 
-/*
-IMPORTANT:
-This assumes your images are like:
-images/1.png, images/2.png, images/3.png, etc.
-
-If they are named differently, this STILL works
-because it randomly tries numbers until one exists.
-*/
-
-const MAX_IMAGES = 50; // increase if you have more
-
-function randomImage() {
-  const num = Math.floor(Math.random() * MAX_IMAGES) + 1;
-  return `images/${num}.png`;
+function getRandomImage() {
+  if (VALID_IMAGES.length === 0) return "";
+  const randomIndex = Math.floor(Math.random() * VALID_IMAGES.length);
+  return `images/${VALID_IMAGES[randomIndex]}`;
 }
 
 function setCard(el) {
+  if (VALID_IMAGES.length === 0) return;
   el.style.opacity = "0";
-
+  
   setTimeout(() => {
-    el.src = randomImage();
-    el.style.opacity = "0.9";
+    el.src = getRandomImage();
+    el.style.opacity = "0.85";
   }, 200);
 }
 
@@ -220,26 +342,23 @@ function init() {
   const left = document.getElementById("cardLeft");
   const right = document.getElementById("cardRight");
 
-  left.style.setProperty("--r", "-6deg");
-  right.style.setProperty("--r", "6deg");
+  left.style.setProperty("--r", "-5deg");
+  right.style.setProperty("--r", "5deg");
 
-  function loadSafe(imgEl) {
-    const img = new Image();
-    const src = randomImage();
-
-    img.onload = () => imgEl.src = src;
-    img.onerror = () => loadSafe(imgEl); // retry until valid image found
-    img.src = src;
+  // Load a valid card name into each element from the start
+  if(VALID_IMAGES.length > 0) {
+    left.src = getRandomImage();
+    right.src = getRandomImage();
+  } else {
+    left.style.display = 'none';
+    right.style.display = 'none';
   }
-
-  loadSafe(left);
-  loadSafe(right);
 
   left.onclick = () => setCard(left);
   right.onclick = () => setCard(right);
 }
 
-/* theme */
+/* Theme engine */
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem(
@@ -254,7 +373,8 @@ function toggleTheme() {
   }
 })();
 
-init();
+// Fire when document ready
+document.addEventListener("DOMContentLoaded", init);
 </script>
 
 </body>
