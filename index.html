@@ -29,7 +29,6 @@
     overflow-x: hidden;
   }
 
-  /* Floating glow orbs */
   body::before,
   body::after {
     content: "";
@@ -85,12 +84,6 @@
     align-items: center;
   }
 
-  .link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 13px;
-  }
-
   .grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -104,29 +97,34 @@
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 14px;
-    overflow: hidden;
+    padding: 14px;
     backdrop-filter: blur(10px);
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
   }
 
   .card h2 {
     font-size: 14px;
-    margin: 0;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin: 0 0 8px 0;
     color: var(--muted);
   }
 
-  iframe {
-    width: 100%;
-    height: 700px;
-    border: none;
-    background: white;
+  .card a {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
   }
 
-  /* -----------------------------
-     FLOATING CARDS (NEW FEATURE)
-  ------------------------------*/
+  .card a:hover {
+    text-decoration: underline;
+  }
 
+  /* FLOATING CARDS */
   .floating-card {
     position: fixed;
     width: 120px;
@@ -138,23 +136,10 @@
     opacity: 0.85;
     transition: transform 0.4s ease, opacity 0.4s ease;
     z-index: 1;
-    user-select: none;
   }
 
-  .floating-card:hover {
-    transform: scale(1.05) rotate(0deg);
-    opacity: 1;
-  }
-
-  .left-stack {
-    left: 10px;
-    top: 120px;
-  }
-
-  .right-stack {
-    right: 10px;
-    top: 120px;
-  }
+  .left-stack { left: 10px; top: 120px; }
+  .right-stack { right: 10px; top: 120px; }
 
   .float {
     animation: floaty 6s ease-in-out infinite;
@@ -170,10 +155,6 @@
     .grid {
       grid-template-columns: 1fr 1fr;
     }
-
-    iframe {
-      height: 750px;
-    }
   }
 </style>
 </head>
@@ -184,8 +165,6 @@
   <h1>Yu-Gi-Oh Server Hub</h1>
 
   <div class="nav">
-    <a class="link" href="https://pazeyellow.github.io/Webapp/" target="_blank">Banlist ↗</a>
-    <a class="link" href="https://pazeyellow.github.io/CCF-Events-Calendar/" target="_blank">Calendar ↗</a>
     <button onclick="toggleTheme()">🌗</button>
   </div>
 </header>
@@ -198,12 +177,18 @@
 
   <div class="card">
     <h2>📅 Events Calendar</h2>
-    <iframe src="https://pazeyellow.github.io/CCF-Events-Calendar/"></iframe>
+    <p>View upcoming events and schedules.</p>
+    <a href="https://pazeyellow.github.io/CCF-Events-Calendar/" target="_blank">
+      Open Calendar →
+    </a>
   </div>
 
   <div class="card">
     <h2>🔴 Banlist</h2>
-    <iframe src="https://pazeyellow.github.io/Webapp/"></iframe>
+    <p>Check current format restrictions and updates.</p>
+    <a href="https://pazeyellow.github.io/Webapp/" target="_blank">
+      Open Banlist →
+    </a>
   </div>
 
 </div>
@@ -217,8 +202,16 @@ const images = [
   "images/card5.jpg"
 ];
 
+let lastCard = null;
+
 function randomCard() {
-  return images[Math.floor(Math.random() * images.length)];
+  let next;
+  do {
+    next = images[Math.floor(Math.random() * images.length)];
+  } while (next === lastCard);
+
+  lastCard = next;
+  return next;
 }
 
 function setCard(el) {
