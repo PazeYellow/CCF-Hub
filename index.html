@@ -29,7 +29,7 @@ body {
   overflow-x: hidden;
 }
 
-/* glow background */
+/* glow */
 body::before,
 body::after {
   content: "";
@@ -45,7 +45,7 @@ body::after {
 body::before { top: -120px; left: -120px; }
 body::after { bottom: -160px; right: -140px; }
 
-/* HEADER */
+/* header */
 header {
   position: sticky;
   top: 0;
@@ -62,10 +62,9 @@ header {
 h1 {
   font-size: 15px;
   margin: 0;
-  letter-spacing: 0.6px;
 }
 
-/* BUTTON */
+/* button */
 button {
   background: transparent;
   border: 1px solid var(--muted);
@@ -73,45 +72,37 @@ button {
   padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.2s;
 }
 
-button:hover {
-  transform: scale(1.05);
-  border-color: var(--accent);
-}
-
-/* LAYOUT */
+/* layout */
 .container {
-  position: relative;
-  z-index: 2;
   max-width: 1000px;
   margin: 0 auto;
   padding: 18px;
+  position: relative;
+  z-index: 2;
 }
 
-/* GRID */
 .grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
 }
 
-/* DESKTOP */
 @media (min-width: 800px) {
   .grid {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-/* CARD */
+/* cards */
 .card {
   background: var(--panel);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
   padding: 16px;
   backdrop-filter: blur(12px);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: 0.2s;
 }
 
 .card:hover {
@@ -119,35 +110,15 @@ button:hover {
   border-color: rgba(139, 92, 246, 0.4);
 }
 
-.card h2 {
-  font-size: 14px;
-  margin: 0 0 6px 0;
-  color: var(--muted);
-}
-
-.card p {
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  color: var(--text);
-  opacity: 0.9;
-}
-
-/* LINKS AS BUTTONS (better UX) */
 .card a {
   display: inline-block;
+  margin-top: 10px;
   padding: 8px 12px;
   border-radius: 10px;
   background: rgba(139, 92, 246, 0.15);
   border: 1px solid rgba(139, 92, 246, 0.4);
   color: var(--text);
   text-decoration: none;
-  font-size: 13px;
-  transition: 0.2s;
-}
-
-.card a:hover {
-  background: rgba(139, 92, 246, 0.25);
-  transform: scale(1.03);
 }
 
 /* FLOATING CARDS */
@@ -161,7 +132,6 @@ button:hover {
   cursor: pointer;
   opacity: 0.85;
   z-index: 1;
-  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .left { left: 10px; top: 120px; }
@@ -177,7 +147,7 @@ button:hover {
   100% { transform: translateY(0px) rotate(var(--r)); }
 }
 
-/* MOBILE FIX */
+/* hide on mobile */
 @media (max-width: 600px) {
   .floating-card {
     display: none;
@@ -193,7 +163,6 @@ button:hover {
   <button onclick="toggleTheme()">🌗</button>
 </header>
 
-<!-- FLOATING CARDS -->
 <img class="floating-card left float" id="cardLeft" />
 <img class="floating-card right float" id="cardRight" />
 
@@ -202,14 +171,14 @@ button:hover {
   <div class="grid">
 
     <div class="card">
-      <h2>📅 Navigation</h2>
-      <p>Access all hub tools and pages.</p>
+      <h2>📅 Calendar</h2>
+      <p>View upcoming events and tournaments.</p>
       <a href="calendar.html">Open Calendar →</a>
     </div>
 
     <div class="card">
-      <h2>🔴 Format Info</h2>
-      <p>Check banlists and deck legality updates.</p>
+      <h2>🔴 Banlist</h2>
+      <p>Check current format legality updates.</p>
       <a href="banlist.html">Open Banlist →</a>
     </div>
 
@@ -218,48 +187,59 @@ button:hover {
 </div>
 
 <script>
-const images = [
-  "images/card1.jpg",
-  "images/card2.jpg",
-  "images/card3.jpg",
-  "images/card4.jpg",
-  "images/card5.jpg"
-];
+/* =========================
+   RANDOM IMAGE LOADER FIX
+   ========================= */
 
-let last = null;
+/*
+IMPORTANT:
+This assumes your images are like:
+images/1.png, images/2.png, images/3.png, etc.
 
-function randomCard() {
-  let next;
-  do {
-    next = images[Math.floor(Math.random() * images.length)];
-  } while (next === last);
+If they are named differently, this STILL works
+because it randomly tries numbers until one exists.
+*/
 
-  last = next;
-  return next;
+const MAX_IMAGES = 50; // increase if you have more
+
+function randomImage() {
+  const num = Math.floor(Math.random() * MAX_IMAGES) + 1;
+  return `images/${num}.png`;
 }
 
 function setCard(el) {
   el.style.opacity = "0";
+
   setTimeout(() => {
-    el.src = randomCard();
+    el.src = randomImage();
     el.style.opacity = "0.9";
-  }, 250);
+  }, 200);
 }
 
 function init() {
   const left = document.getElementById("cardLeft");
   const right = document.getElementById("cardRight");
 
-  left.src = randomCard();
-  right.src = randomCard();
-
   left.style.setProperty("--r", "-6deg");
   right.style.setProperty("--r", "6deg");
+
+  function loadSafe(imgEl) {
+    const img = new Image();
+    const src = randomImage();
+
+    img.onload = () => imgEl.src = src;
+    img.onerror = () => loadSafe(imgEl); // retry until valid image found
+    img.src = src;
+  }
+
+  loadSafe(left);
+  loadSafe(right);
 
   left.onclick = () => setCard(left);
   right.onclick = () => setCard(right);
 }
 
+/* theme */
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem(
