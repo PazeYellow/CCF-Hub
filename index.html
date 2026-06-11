@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Yu-Gi-Oh Server Hub</title>
 
+<!-- ✅ FAVICON (replace with your own file if needed) -->
+<link rel="icon" type="image/png" href="images/server-icon.png" />
+
 <style>
 :root {
   --bg: #0b0d19;
@@ -31,31 +34,12 @@ body.light {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  font-family: system-ui, Arial, sans-serif;
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text);
   overflow-x: hidden;
-  line-height: 1.5;
 }
-
-/* Background Ambient Glows */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  width: 500px;
-  height: 500px;
-  background: var(--accent);
-  filter: blur(140px);
-  opacity: var(--accent-glow-opacity, 0.15);
-  z-index: 0;
-  pointer-events: none;
-  transition: background 0.3s, opacity 0.3s;
-}
-body.light::before, body.light::after { --accent-glow-opacity: 0.07; }
-body::before { top: -150px; left: -150px; }
-body::after { bottom: -200px; right: -150px; }
 
 /* Header */
 header {
@@ -68,68 +52,9 @@ header {
   padding: 16px 24px;
   background: var(--panel);
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--panel-border);
 }
 
-.header-brand h1 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* Buttons & Links */
-button {
-  background: transparent;
-  border: 1px solid var(--panel-border);
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: scale(1.03);
-}
-
-body.light button:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.btn-discord {
-  background: var(--discord);
-  color: #fff;
-  border: none;
-  font-weight: 600;
-  text-decoration: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-discord:hover {
-  background: #4752c4;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
-}
-
-/* Layout Container */
 .container {
   max-width: 850px;
   margin: 40px auto;
@@ -145,26 +70,18 @@ body.light button:hover {
 }
 
 @media (min-width: 650px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .grid-full {
-    grid-column: span 2;
-  }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .grid-full { grid-column: span 2; }
 }
 
-/* Cards Styling */
+/* Cards */
 .card {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 20px;
   padding: 24px;
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  transition: 0.25s;
 }
 
 .card:hover {
@@ -174,80 +91,71 @@ body.light button:hover {
 }
 
 .card h2 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin: 0 0 10px;
 }
 
 .card p {
-  margin: 0 0 20px 0;
   color: var(--muted);
-  font-size: 15px;
 }
 
-.card .card-action {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: var(--accent-glow);
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.card .card-action:hover {
-  background: var(--accent);
-  color: #fff;
-  border-color: transparent;
-}
-
-/* Floating Yu-Gi-Oh Cards */
+/* Floating Cards (FIXED) */
 .floating-card {
   position: fixed;
-  width: 140px;
-  height: 204px;
+  width: 120px;
+  height: 175px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   cursor: pointer;
   z-index: 5;
-  opacity: 0.85;
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  opacity: 0.9;
+  transition: transform 0.2s, opacity 0.3s;
 }
 
 .floating-card:hover {
-  transform: scale(1.08) rotate(0deg) !important;
+  transform: scale(1.08) !important;
   z-index: 6;
 }
 
-/* Responsive Placement for Floating Cards */
-@media (min-width: 1300px) {
-  .left { left: calc(50% - 630px); top: 180px; }
-  .right { right: calc(50% - 630px); top: 180px; }
+/* Desktop placement */
+@media (min-width: 1100px) {
+  .left { left: 20px; top: 180px; }
+  .right { right: 20px; top: 180px; }
 }
 
-@media (max-width: 1299px) {
+/* Mobile placement (IMPORTANT FIX) */
+@media (max-width: 1099px) {
   .floating-card {
-    display: none;
+    width: 80px;
+    height: 120px;
+    top: auto;
+    bottom: 20px;
+    opacity: 0.7;
   }
+
+  .left { left: 10px; }
+  .right { right: 10px; }
 }
 
-/* Float Animations */
+/* Float animation */
 .float {
   animation: floaty 6s ease-in-out infinite;
 }
 
 @keyframes floaty {
-  0%   { transform: translateY(0px) rotate(var(--r)); }
-  50%  { transform: translateY(-12px) rotate(calc(var(--r) + 1.5deg)); }
+  0% { transform: translateY(0px) rotate(var(--r)); }
+  50% { transform: translateY(-12px) rotate(calc(var(--r) + 1.5deg)); }
   100% { transform: translateY(0px) rotate(var(--r)); }
+}
+
+/* Buttons */
+button {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -255,104 +163,51 @@ body.light button:hover {
 <body>
 
 <header>
-  <div class="header-brand">
-    <h1>Yu-Gi-Oh Server Hub</h1>
-  </div>
-  <div class="header-actions">
-    <a href="https://discord.gg/arWVaBH9U5" target="_blank" class="btn-discord">
-      <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.72-10.93,68.6,68.6,0,0,1-10.64-5.12c.91-.67,1.81-1.37,2.65-2.1a75.22,75.22,0,0,0,72.94,0c.84.73,1.74,1.43,2.65,2.1a68.86,68.86,0,0,1-10.64,5.12,74.74,74.74,0,0,0,6.72,10.93,105.73,105.73,0,0,0,31.62-18.83C129.54,50.13,123.63,27.35,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.94,46,53.8,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.17,46,96,53,91,65.69,84.69,65.69Z"/></svg>
-      Discord
-    </a>
-    <button onclick="toggleTheme()" aria-label="Toggle Theme">🌗</button>
+  <h1>Yu-Gi-Oh Server Hub</h1>
+
+  <div>
+    <a href="https://discord.gg/arWVaBH9U5" class="btn-discord">Discord</a>
+    <button onclick="toggleTheme()">🌗</button>
   </div>
 </header>
 
-<img class="floating-card left float" id="cardLeft" alt="Left Card Image" />
-<img class="floating-card right float" id="cardRight" alt="Right Card Image" />
+<!-- Floating Cards -->
+<img id="cardLeft" class="floating-card left float" />
+<img id="cardRight" class="floating-card right float" />
 
 <div class="container">
   <div class="grid">
 
     <div class="card">
-      <div>
-        <h2>📅 Calendar</h2>
-        <p>Keep track of upcoming community events, local tournament dates, and special server matches.</p>
-      </div>
-      <a href="calendar.html" class="card-action">Open Calendar →</a>
+      <h2>📅 Calendar</h2>
+      <p>Events and tournaments.</p>
     </div>
 
     <div class="card">
-      <div>
-        <h2>🔴 Banlist</h2>
-        <p>Review current competitive format legalities, historical shifts, and community format alterations.</p>
-      </div>
-      <a href="banlist.html" class="card-action">Open Banlist →</a>
-    </div>
-
-    <div class="card grid-full" style="border-color: rgba(88, 101, 242, 0.255);">
-      <div>
-        <h2>💬 Join Our Community</h2>
-        <p>Connect with other duelists, share decklists, test new strategies, and participate in real-time matchups over on our dedicated Discord server.</p>
-      </div>
-      <a href="https://discord.gg/arWVaBH9U5" target="_blank" class="card-action" style="background: var(--discord); color: white; border: none;">
-        Join Discord Server →
-      </a>
+      <h2>🔴 Banlist</h2>
+      <p>Format rules and updates.</p>
     </div>
 
   </div>
 </div>
 
 <script>
-/* ====================================
-   IMAGE ARRAY CONFIGURATION
-   ==================================== */
-const VALID_IMAGES = [
-  "1.jpg", "10.jpg", "11.jpg", "2.jpg", "3.png", 
-  "4.png", "5.png", "6.png", "7.png", "8.png", "9.jpg"
+const IMAGES = [
+  "1.jpg","2.jpg","3.png","4.png","5.png",
+  "6.png","7.png","8.png","9.jpg","10.jpg","11.jpg"
 ];
 
-function getRandomImage() {
-  if (VALID_IMAGES.length === 0) return "";
-  const randomIndex = Math.floor(Math.random() * VALID_IMAGES.length);
-  return `images/${VALID_IMAGES[randomIndex]}`;
+function randomImg() {
+  return "images/" + IMAGES[Math.floor(Math.random() * IMAGES.length)];
 }
 
-// Attempts to set image source and recovers if case-sensitivity on hosting targets uppercase files
-function loadWithFallback(imgElement, srcPath) {
-  const imgTester = new Image();
-  
-  imgTester.onload = () => {
-    imgElement.src = srcPath;
+/* ✅ SIMPLE RELIABLE LOADER */
+function setImage(el) {
+  const src = randomImg();
+  el.onerror = () => {
+    console.warn("Image failed:", src);
   };
-  
-  imgTester.onerror = () => {
-    // If lowercase extension failed, try switching extension to uppercase (e.g. .jpg -> .JPG)
-    let fallbackPath = "";
-    if (srcPath.endsWith(".jpg")) fallbackPath = srcPath.replace(".jpg", ".JPG");
-    if (srcPath.endsWith(".png")) fallbackPath = srcPath.replace(".png", ".PNG");
-    
-    if (fallbackPath && fallbackPath !== srcPath) {
-      console.warn(`Failed loading ${srcPath}. Retrying uppercase variant: ${fallbackPath}`);
-      const fallbackTester = new Image();
-      fallbackTester.onload = () => { imgElement.src = fallbackPath; };
-      fallbackTester.onerror = () => {
-        console.error(`Both lowercase and uppercase extensions failed for path: ${srcPath}. Verify folder location matches exactly.`);
-      };
-      fallbackTester.src = fallbackPath;
-    } else {
-      console.error(`Failed to load image asset path: ${srcPath}. Check your filename configuration.`);
-    }
-  };
-  
-  imgTester.src = srcPath;
-}
-
-function setCard(el) {
-  el.style.opacity = "0";
-  setTimeout(() => {
-    loadWithFallback(el, getRandomImage());
-    el.style.opacity = "0.85";
-  }, 200);
+  el.src = src;
 }
 
 function init() {
@@ -362,29 +217,24 @@ function init() {
   left.style.setProperty("--r", "-5deg");
   right.style.setProperty("--r", "5deg");
 
-  if (VALID_IMAGES.length > 0) {
-    loadWithFallback(left, getRandomImage());
-    loadWithFallback(right, getRandomImage());
-  }
+  setImage(left);
+  setImage(right);
 
-  left.onclick = () => setCard(left);
-  right.onclick = () => setCard(right);
+  left.onclick = () => setImage(left);
+  right.onclick = () => setImage(right);
 }
 
-/* Theme engine */
+/* Theme */
 function toggleTheme() {
   document.body.classList.toggle("light");
-  localStorage.setItem(
-    "theme",
+  localStorage.setItem("theme",
     document.body.classList.contains("light") ? "light" : "dark"
   );
 }
 
-(function loadTheme(){
-  if (localStorage.getItem("theme") === "light") {
-    document.body.classList.add("light");
-  }
-})();
+if (localStorage.getItem("theme") === "light") {
+  document.body.classList.add("light");
+}
 
 document.addEventListener("DOMContentLoaded", init);
 </script>
