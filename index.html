@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Yu-Gi-Oh Server Hub</title>
+
+<style>
+  :root {
+    --bg: #0f1220;
+    --panel: #171a2b;
+    --text: #e8ecff;
+    --muted: #aab2d5;
+    --accent: #8b5cf6;
+  }
+
+  body.light {
+    --bg: #f5f7ff;
+    --panel: #ffffff;
+    --text: #1c1f2e;
+    --muted: #5a607a;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  h1 {
+    font-size: 16px;
+    margin: 0;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card h2 {
+    font-size: 14px;
+    margin: 0;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    color: var(--muted);
+  }
+
+  iframe {
+    width: 100%;
+    height: 700px;
+    border: none;
+    background: white;
+  }
+
+  .nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+
+  @media (min-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    iframe {
+      height: 750px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Yu-Gi-Oh Server Hub</h1>
+
+  <div class="nav">
+    <a class="link" href="https://pazeyellow.github.io/Webapp/" target="_blank">Banlist ↗</a>
+    <a class="link" href="https://pazeyellow.github.io/CCF-Events-Calendar/" target="_blank">Calendar ↗</a>
+    <button onclick="toggleTheme()">🌗</button>
+  </div>
+</header>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>📅 Events Calendar</h2>
+    <iframe src="https://pazeyellow.github.io/CCF-Events-Calendar/"></iframe>
+  </div>
+
+  <div class="card">
+    <h2>🔴 Banlist</h2>
+    <iframe src="https://pazeyellow.github.io/Webapp/"></iframe>
+  </div>
+
+</div>
+
+<script>
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+(function loadTheme(){
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+  }
+})();
+</script>
+
+</body>
+</html>
