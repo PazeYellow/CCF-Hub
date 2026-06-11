@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Yu-Gi-Oh Server Calendar</title>
+
+<style>
+  :root {
+    --bg: #0f1220;
+    --panel: #171a2b;
+    --panel2: #1f2440;
+    --text: #e8ecff;
+    --muted: #aab2d5;
+
+    --banlist: #ff4d4d;
+    --release: #4da3ff;
+    --tourney: #8b5cf6;
+    --today: #ffd166;
+  }
+
+  body.light {
+    --bg: #f5f7ff;
+    --panel: #ffffff;
+    --panel2: #eef1ff;
+    --text: #1c1f2e;
+    --muted: #5a607a;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    transition: 0.25s ease;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1100px;
+    padding: 20px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  h1 {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid #2a2f4a;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    filter: brightness(1.1);
+  }
+
+  #monthLabel {
+    font-weight: 600;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+
+  /* GRID */
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  .day-name {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 6px 0;
+  }
+
+  .day {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    min-height: 95px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: 0.2s;
+  }
+
+  .day:hover {
+    transform: translateY(-2px);
+    background: var(--panel2);
+  }
+
+  .empty {
+    background: transparent;
+    border: none;
+  }
+
+  .date {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .today {
+    outline: 2px solid var(--today);
+  }
+
+  /* EVENT BADGES */
+  .event {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    width: fit-content;
+    color: white;
+    white-space: nowrap;
+  }
+
+  .banlist { background: var(--banlist); }
+  .release { background: var(--release); }
+  .tourney { background: var(--tourney); }
+
+  /* MOBILE */
+  @media (max-width: 650px) {
+    .day {
+      min-height: 75px;
+    }
+
+    h1 {
+      font-size: 14px;
+    }
+
+    .event {
+      font-size: 9px;
+    }
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+  <h1>Yu-Gi-Oh Server Calendar</h1>
+
+  <div class="controls">
+    <button onclick="toggleTheme()">🌗</button>
+    <button onclick="changeMonth(-1)">◀</button>
+    <div id="monthLabel"></div>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+</header>
+
+<div class="calendar" id="calendar"></div>
+
+</div>
+
+<script>
+let current = new Date();
+
+/* ---------------- THEME ---------------- */
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+(function loadTheme(){
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+  }
+})();
+
+/* ---------------- EVENT RULES ---------------- */
+
+// 🟦 Card release start date
+const releaseStart = new Date(2026, 5, 12); // June 12, 2026
+
+function isReleaseDay(date) {
+  const msPerDay = 1000 * 60 * 60 * 24;
+
+  const start = new Date(releaseStart);
+  start.setHours(0,0,0,0);
+
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+
+  const diff = Math.floor((d - start) / msPerDay);
+
+  return diff >= 0 && diff % 14 === 0;
+}
+
+function isBanlist(date) {
+  const y = date.getFullYear();
+  const m = date.getMonth();
+  const d = date.getDate();
+
+  // exception
+  if (y === 2026 && m === 5 && d === 12) return false;
+
+  return d === 12 || d === 24;
+}
+
+function isTournament(date) {
+  return date.getDay() === 6; // Saturday
+}
+
+/* ---------------- RENDER ---------------- */
+
+function renderCalendar() {
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+
+  const y = current.getFullYear();
+  const m = current.getMonth();
+
+  document.getElementById("monthLabel").textContent =
+    current.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+
+  const week = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  week.forEach(w => {
+    const el = document.createElement("div");
+    el.className = "day-name";
+    el.textContent = w;
+    cal.appendChild(el);
+  });
+
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement("div");
+    empty.className = "day empty";
+    cal.appendChild(empty);
+  }
+
+  const today = new Date();
+
+  for (let i = 1; i <= days; i++) {
+    const date = new Date(y, m, i);
+
+    const cell = document.createElement("div");
+    cell.className = "day";
+
+    if (date.toDateString() === today.toDateString()) {
+      cell.classList.add("today");
+    }
+
+    let html = `<div class="date">${i}</div>`;
+
+    if (isBanlist(date)) {
+      html += `<div class="event banlist">Banlist</div>`;
+    }
+
+    if (isReleaseDay(date)) {
+      html += `<div class="event release">Card Release</div>`;
+    }
+
+    if (isTournament(date)) {
+      html += `<div class="event tourney">Tournament</div>`;
+    }
+
+    cell.innerHTML = html;
+    cal.appendChild(cell);
+  }
+}
+
+function changeMonth(step) {
+  current.setMonth(current.getMonth() + step);
+  renderCalendar();
+}
+
+renderCalendar();
+</script>
+
+</body>
+</html>
