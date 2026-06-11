@@ -32,14 +32,24 @@
     --accent-glow: rgba(109, 40, 217, 0.06);
   }
       
+  html {
+    background-color: #0b0d19; /* Prevents white browser flash before CSS fully initializes */
+  }
+  html.light {
+    background-color: #f4f6fa;
+  }
+
   body {
     margin: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    background: var(--bg-gradient);
+    background-color: var(--bg);
+    background-image: var(--bg-gradient);
     background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text);
     overflow-x: hidden;
     line-height: 1.5;
+    min-height: 100vh; /* Eliminates white box/bar glitches while scrolling */
   }
       
   /* Background Ambient Glows */
@@ -219,7 +229,12 @@
     border-color: transparent;
   }
       
-  /* Floating / Showcase Yu-Gi-Oh Cards */
+  /* Floating Containers & Yu-Gi-Oh Image Configs */
+  .card-anim-container {
+    z-index: 5;
+    display: inline-block;
+  }
+
   .floating-card {
     width: 120px;
     height: 175px;
@@ -227,25 +242,26 @@
     border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     cursor: pointer;
-    z-index: 5;
     opacity: 0.9;
-    transition: opacity 0.3s ease, transform 0.2s ease;
-    background-color: rgba(255, 255, 255, 0.05); /* Placeholder background while loading */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.05);
+    display: block;
   }
       
-  .floating-card:hover {
+  .card-anim-container:hover .floating-card {
     transform: scale(1.08) rotate(0deg) !important;
-    z-index: 6;
     opacity: 1;
   }
       
-  /* PC Specific Side-Float Layout overrides */
+  /* PC Specific Side-Float Layout Overrides */
   @media (min-width: 1300px) {
     .mobile-card-showcase {
-      display: contents; /* Removes the showcase wrapper layout styling on desktop */
+      display: contents; 
+    }
+    .card-anim-container {
+      position: fixed;
     }
     .floating-card {
-      position: fixed;
       width: 140px;
       height: 204px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.5);
@@ -254,7 +270,7 @@
     .right { right: calc(50% - 630px); top: 180px; }
   }
       
-  /* Float Animations */
+  /* Float Animations on the containers, ensuring images never stall */
   .float {
     animation: floaty 6s ease-in-out infinite;
   }
@@ -283,8 +299,12 @@
 
 <div class="container">
   <div class="mobile-card-showcase">
-    <img class="floating-card left float" id="cardLeft" alt="Left Card Image" />    
-    <img class="floating-card right float" id="cardRight" alt="Right Card Image" />
+    <div class="card-anim-container left float" id="wrapperLeft">
+      <img class="floating-card" id="cardLeft" alt="Left Card Image" />    
+    </div>
+    <div class="card-anim-container right float" id="wrapperRight">
+      <img class="floating-card" id="cardRight" alt="Right Card Image" />
+    </div>
   </div>
 
   <div class="grid">    
@@ -311,8 +331,8 @@
       </div>    
       <a href="https://discord.gg/arWVaBH9U5" target="_blank" class="card-action" style="background: var(--discord); color: white; border: none;">    
         Join Discord Server →    
-  </a>    
-</div>
+      </a>    
+    </div>
   </div>    
 </div>
 
@@ -336,7 +356,7 @@ function loadWithFallback(imgElement, srcPath) {
       
   imgTester.onload = () => {    
     imgElement.src = srcPath;
-    imgElement.style.opacity = "0.9"; // Ensures visibility once loaded
+    imgElement.style.opacity = "0.9";
   };    
       
   imgTester.onerror = () => {    
@@ -352,11 +372,11 @@ function loadWithFallback(imgElement, srcPath) {
         imgElement.style.opacity = "0.9";
       };    
       fallbackTester.onerror = () => {    
-        console.error(`Both lowercase and uppercase extensions failed for path: ${srcPath}. Check your 'images/' folder.`);    
+        console.error(`Both lowercase and uppercase extensions failed for path: ${srcPath}.`);    
       };    
       fallbackTester.src = fallbackPath;    
     } else {    
-      console.error(`Failed to load image asset path: ${srcPath}. Check your filename configuration.`);    
+      console.error(`Failed to load image asset path: ${srcPath}. Check filename variables.`);    
     }    
   };    
       
@@ -367,37 +387,42 @@ function setCard(el) {
   el.style.opacity = "0";    
   setTimeout(() => {    
     loadWithFallback(el, getRandomImage());    
-  }, 200);    
+  }, 150);    
 }    
     
 function init() {    
-  const left = document.getElementById("cardLeft");    
-  const right = document.getElementById("cardRight");    
+  const wrapperLeft = document.getElementById("wrapperLeft");
+  const wrapperRight = document.getElementById("wrapperRight");
+  const leftImg = document.getElementById("cardLeft");    
+  const rightImg = document.getElementById("cardRight");    
     
-  left.style.setProperty("--r", "-5deg");    
-  right.style.setProperty("--r", "5deg");    
+  wrapperLeft.style.setProperty("--r", "-5deg");    
+  wrapperRight.style.setProperty("--r", "5deg");    
     
   if (VALID_IMAGES.length > 0) {    
-    loadWithFallback(left, getRandomImage());    
-    loadWithFallback(right, getRandomImage());    
+    loadWithFallback(leftImg, getRandomImage());    
+    loadWithFallback(rightImg, getRandomImage());    
   }    
     
-  left.onclick = () => setCard(left);    
-  right.onclick = () => setCard(right);    
+  leftImg.onclick = () => setCard(leftImg);    
+  rightImg.onclick = () => setCard(rightImg);    
 }    
     
 /* Theme engine */    
 function toggleTheme() {    
-  document.body.classList.toggle("light");    
-  localStorage.setItem(    
-    "theme",    
-    document.body.classList.contains("light") ? "light" : "dark"    
-  );    
+  const isLight = document.body.classList.toggle("light");    
+  if (isLight) {
+    document.documentElement.classList.add("light");
+  } else {
+    document.documentElement.classList.remove("light");
+  }
+  localStorage.setItem("theme", isLight ? "light" : "dark");    
 }    
     
 (function loadTheme(){    
   if (localStorage.getItem("theme") === "light") {    
     document.body.classList.add("light");    
+    document.documentElement.classList.add("light");
   }    
 })();    
     
