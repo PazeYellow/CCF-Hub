@@ -218,6 +218,7 @@ body.light button:hover {
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   cursor: pointer;
   z-index: 5;
+  opacity: 0.85;
   transition: opacity 0.3s ease, transform 0.2s ease;
 }
 
@@ -228,13 +229,11 @@ body.light button:hover {
 
 /* Responsive Placement for Floating Cards */
 @media (min-width: 1300px) {
-  /* Aligns perfectly to the outer left and right of the main card box */
   .left { left: calc(50% - 630px); top: 180px; }
   .right { right: calc(50% - 630px); top: 180px; }
 }
 
 @media (max-width: 1299px) {
-  /* Hides elements entirely on small screens/laptops to completely stop layout overlapping */
   .floating-card {
     display: none;
   }
@@ -268,8 +267,8 @@ body.light button:hover {
   </div>
 </header>
 
-<img class="floating-card left float" id="cardLeft" alt="Yu-Gi-Oh Card Left" />
-<img class="floating-card right float" id="cardRight" alt="Yu-Gi-Oh Card Right" />
+<img class="floating-card left float" id="cardLeft" alt="Left Card Image" />
+<img class="floating-card right float" id="cardRight" alt="Right Card Image" />
 
 <div class="container">
   <div class="grid">
@@ -307,19 +306,9 @@ body.light button:hover {
 /* ====================================
    IMAGE ARRAY CONFIGURATION
    ==================================== */
-// Your exact asset list. Supports mixed formats (.jpg and .png) effortlessly.
 const VALID_IMAGES = [
-  "1.jpg",
-  "10.jpg",
-  "11.jpg",
-  "2.jpg",
-  "3.png",
-  "4.png",
-  "5.png",
-  "6.png",
-  "7.png",
-  "8.png",
-  "9.jpg"
+  "1.jpg", "10.jpg", "11.jpg", "2.jpg", "3.png", 
+  "4.png", "5.png", "6.png", "7.png", "8.png", "9.jpg"
 ];
 
 function getRandomImage() {
@@ -328,12 +317,40 @@ function getRandomImage() {
   return `images/${VALID_IMAGES[randomIndex]}`;
 }
 
-function setCard(el) {
-  if (VALID_IMAGES.length === 0) return;
-  el.style.opacity = "0";
+// Attempts to set image source and recovers if case-sensitivity on hosting targets uppercase files
+function loadWithFallback(imgElement, srcPath) {
+  const imgTester = new Image();
   
+  imgTester.onload = () => {
+    imgElement.src = srcPath;
+  };
+  
+  imgTester.onerror = () => {
+    // If lowercase extension failed, try switching extension to uppercase (e.g. .jpg -> .JPG)
+    let fallbackPath = "";
+    if (srcPath.endsWith(".jpg")) fallbackPath = srcPath.replace(".jpg", ".JPG");
+    if (srcPath.endsWith(".png")) fallbackPath = srcPath.replace(".png", ".PNG");
+    
+    if (fallbackPath && fallbackPath !== srcPath) {
+      console.warn(`Failed loading ${srcPath}. Retrying uppercase variant: ${fallbackPath}`);
+      const fallbackTester = new Image();
+      fallbackTester.onload = () => { imgElement.src = fallbackPath; };
+      fallbackTester.onerror = () => {
+        console.error(`Both lowercase and uppercase extensions failed for path: ${srcPath}. Verify folder location matches exactly.`);
+      };
+      fallbackTester.src = fallbackPath;
+    } else {
+      console.error(`Failed to load image asset path: ${srcPath}. Check your filename configuration.`);
+    }
+  };
+  
+  imgTester.src = srcPath;
+}
+
+function setCard(el) {
+  el.style.opacity = "0";
   setTimeout(() => {
-    el.src = getRandomImage();
+    loadWithFallback(el, getRandomImage());
     el.style.opacity = "0.85";
   }, 200);
 }
@@ -345,13 +362,9 @@ function init() {
   left.style.setProperty("--r", "-5deg");
   right.style.setProperty("--r", "5deg");
 
-  // Load a valid card name into each element from the start
-  if(VALID_IMAGES.length > 0) {
-    left.src = getRandomImage();
-    right.src = getRandomImage();
-  } else {
-    left.style.display = 'none';
-    right.style.display = 'none';
+  if (VALID_IMAGES.length > 0) {
+    loadWithFallback(left, getRandomImage());
+    loadWithFallback(right, getRandomImage());
   }
 
   left.onclick = () => setCard(left);
@@ -373,7 +386,6 @@ function toggleTheme() {
   }
 })();
 
-// Fire when document ready
 document.addEventListener("DOMContentLoaded", init);
 </script>
 
