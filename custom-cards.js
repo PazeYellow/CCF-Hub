@@ -4,7 +4,7 @@
   const state = {
     cards: [],
     filtered: [],
-    selectedId: "",
+    selectedIndex: -1,
     source: "loading",
     currentPage: 1
   };
@@ -31,6 +31,7 @@
   function normaliseCard(card, index) {
     card = card || {};
     return {
+      uniqueIndex: index,
       id: String(card.id || card.name || `card-${index}`),
       name: String(card.name || "Unnamed Card"),
       type: String(card.type || card.cardType || "Card"),
@@ -129,11 +130,11 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "card-result";
-    button.classList.toggle("active", card.id === state.selectedId);
-    button.setAttribute("data-card-id", card.id);
+    button.classList.toggle("active", card.uniqueIndex === state.selectedIndex);
+    button.setAttribute("data-card-index", card.uniqueIndex);
     button.addEventListener("click", function (e) {
       e.preventDefault();
-      state.selectedId = card.id;
+      state.selectedIndex = card.uniqueIndex;
       updateCardDisplay();
     });
 
@@ -167,13 +168,13 @@
     document.querySelectorAll(".card-result").forEach((btn) => {
       btn.classList.remove("active");
     });
-    const activeBtn = document.querySelector(`[data-card-id="${state.selectedId}"]`);
+    const activeBtn = document.querySelector(`[data-card-index="${state.selectedIndex}"]`);
     if (activeBtn) {
       activeBtn.classList.add("active");
     }
 
     // Update detail panel
-    const selectedCard = state.cards.find((card) => card.id === state.selectedId);
+    const selectedCard = state.cards[state.selectedIndex];
     renderDetail(selectedCard);
   }
 
@@ -297,8 +298,8 @@
     // Reset to page 1 if filters change
     state.currentPage = 1;
 
-    if (!state.selectedId || !state.filtered.some((card) => card.id === state.selectedId)) {
-      state.selectedId = state.filtered[0]?.id || "";
+    if (state.selectedIndex === -1 || !state.filtered.some((card) => card.uniqueIndex === state.selectedIndex)) {
+      state.selectedIndex = state.filtered[0]?.uniqueIndex || -1;
     }
 
     // Calculate pagination
@@ -325,7 +326,7 @@
       ? "Custom-card database is not connected yet."
       : "Live custom-card database";
 
-    const selectedCard = state.cards.find((card) => card.id === state.selectedId);
+    const selectedCard = state.cards[state.selectedIndex];
     renderDetail(selectedCard);
     renderPagination();
   }
