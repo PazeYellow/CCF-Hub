@@ -12,7 +12,8 @@
     selectedStatus: "forbidden",
     selectedIndex: -1,
     requests: [],
-    users: []
+    users: [],
+    officialSearchTimer: null
   };
 
   const dom = {};
@@ -21,9 +22,11 @@
     [
       "authPanel", "authMessage", "adminWorkspace", "loginEmail", "loginPassword", "loginButton",
       "signupName", "signupEmail", "signupPassword", "signupRole", "signupButton", "sessionMeta",
-      "sessionRole", "currentPassword", "newPassword", "changePasswordButton", "logoutButton",
+      "sessionRole", "sessionAvatar", "profileDisplayName", "profileColor", "profileAvatarUrl",
+      "profileBio", "saveProfileButton", "currentPassword", "newPassword", "changePasswordButton", "logoutButton",
       "banSearch", "banStatusFilter", "banCardList", "banEditorStatus", "banEditorCount",
-      "cardName", "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
+      "officialCardSearch", "officialCardResults", "cardSource", "officialId", "cardName",
+      "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
       "refreshRequests", "userList", "refreshUsers"
     ].forEach((id) => {
@@ -38,7 +41,9 @@
     dom.loginButton.addEventListener("click", login);
     dom.signupButton.addEventListener("click", signup);
     dom.logoutButton.addEventListener("click", logout);
+    dom.saveProfileButton.addEventListener("click", saveProfile);
     dom.changePasswordButton.addEventListener("click", changePassword);
+    dom.officialCardSearch.addEventListener("input", queueOfficialCardSearch);
     dom.banSearch.addEventListener("input", renderBanlist);
     dom.banStatusFilter.addEventListener("change", function () {
       state.selectedStatus = dom.banStatusFilter.value;
@@ -133,6 +138,27 @@
     }
   }
 
+  async function saveProfile() {
+    setNotice(dom.editorMessage, "");
+    try {
+      const data = await window.CCF_API.request("/api/me/profile", {
+        method: "PATCH",
+        body: {
+          displayName: dom.profileDisplayName.value,
+          avatarUrl: dom.profileAvatarUrl.value,
+          profileColor: dom.profileColor.value,
+          bio: dom.profileBio.value
+        }
+      });
+      state.user = data.user;
+      renderProfile();
+      setNotice(dom.editorMessage, "Profile saved.");
+      if (isOwner()) await loadUsers();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
   async function loadWorkspace() {
     showLoggedIn();
     await loadBanlist();
@@ -178,12 +204,28 @@
   function showLoggedIn() {
     dom.authPanel.classList.add("hidden");
     dom.adminWorkspace.classList.remove("hidden");
-    dom.sessionMeta.textContent = `${state.user.displayName || state.user.email} (${state.user.email})`;
-    dom.sessionRole.textContent = state.user.role;
+    renderProfile();
     document.querySelectorAll(".owner-only").forEach((element) => {
       element.classList.toggle("hidden", !isOwner());
     });
     dom.submitBanRequest.classList.toggle("hidden", isOwner());
+  }
+
+  function renderProfile() {
+    const displayName = state.user.displayName || state.user.email;
+    const color = state.user.profileColor || "#45d5c6";
+    const avatarUrl = state.user.avatarUrl || "";
+
+    dom.sessionMeta.textContent = `${displayName} (${state.user.email})`;
+    dom.sessionRole.textContent = state.user.role;
+    dom.sessionAvatar.style.backgroundColor = color;
+    dom.sessionAvatar.style.backgroundImage = avatarUrl ? `url("${avatarUrl}")` : "";
+    dom.sessionAvatar.textContent = avatarUrl ? "" : initials(displayName);
+
+    dom.profileDisplayName.value = displayName;
+    dom.profileColor.value = color;
+    dom.profileAvatarUrl.value = avatarUrl;
+    dom.profileBio.value = state.user.bio || "";
   }
 
   function showAdminTab(tab) {
@@ -283,8 +325,12 @@
       item.className = "admin-list-item";
       item.innerHTML = `
         <div>
-          <strong>${escapeHtml(user.displayName || user.email)}</strong>
+          <div class="profile-chip">
+            <span class="profile-avatar small" style="background-color: ${escapeHtml(user.profileColor || "#45d5c6")}; ${user.avatarUrl ? `background-image: url('${escapeHtml(user.avatarUrl)}')` : ""}">${user.avatarUrl ? "" : escapeHtml(initials(user.displayName || user.email))}</span>
+            <strong>${escapeHtml(user.displayName || user.email)}</strong>
+          </div>
           <p>${escapeHtml(user.email)}</p>
+          ${user.bio ? `<p>${escapeHtml(user.bio)}</p>` : ""}
         </div>
         <span class="pill ${user.status === "active" ? "aqua" : user.status === "pending" ? "gold" : "rose"}">${user.role} / ${user.status}</span>
       `;
@@ -330,6 +376,59 @@
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
+  }
+
+  function queueOfficialCardSearch() {
+    clearTimeout(state.officialSearchTimer);
+    state.officialSearchTimer = setTimeout(searchOfficialCards, 350);
+  }
+
+  async function searchOfficialCards() {
+    const query = dom.officialCardSearch.value.trim();
+    dom.officialCardResults.innerHTML = "";
+
+    if (query.length < 2) return;
+
+    try {
+      const data = await window.CCF_API.request(`/api/admin/cards/search?q=${encodeURIComponent(query)}`);
+      renderOfficialCardResults(data.cards || []);
+    } catch (error) {
+      dom.officialCardResults.innerHTML = `<div class="notice danger">${escapeHtml(error.message)}</div>`;
+    }
+  }
+
+  function renderOfficialCardResults(cards) {
+    dom.officialCardResults.innerHTML = "";
+
+    if (!cards.length) {
+      dom.officialCardResults.innerHTML = '<div class="empty-state">No official cards found.</div>';
+      return;
+    }
+
+    cards.forEach((card) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "official-card-result";
+      button.innerHTML = `
+        <span class="official-card-thumb">${card.image ? `<img src="${escapeHtml(card.image)}" alt="">` : ""}</span>
+        <span><strong>${escapeHtml(card.name)}</strong><small>${escapeHtml(card.type || "Card")}</small></span>
+      `;
+      button.addEventListener("click", function () {
+        fillOfficialCard(card);
+      });
+      dom.officialCardResults.appendChild(button);
+    });
+  }
+
+  function fillOfficialCard(card) {
+    state.selectedIndex = -1;
+    dom.cardSource.value = "official";
+    dom.officialId.value = card.officialId || "";
+    dom.cardName.value = card.name || "";
+    dom.cardType.value = card.type || "Card";
+    dom.cardImage.value = card.image || "";
+    dom.banEditorStatus.textContent = card.name || "Official card";
+    renderBanlist();
   }
 
   async function saveDirectly() {
@@ -412,6 +511,8 @@
   }
 
   function showCard(card, status) {
+    dom.cardSource.value = card.source || "custom";
+    dom.officialId.value = card.officialId || "";
     dom.cardName.value = card.name || "";
     dom.cardType.value = card.type || "Card";
     dom.cardImage.value = card.image || "";
@@ -420,6 +521,8 @@
   }
 
   function clearForm() {
+    dom.cardSource.value = "custom";
+    dom.officialId.value = "";
     dom.cardName.value = "";
     dom.cardType.value = "Card";
     dom.cardImage.value = "";
@@ -437,7 +540,9 @@
     return {
       name,
       type: dom.cardType.value.trim() || "Card",
-      image: dom.cardImage.value.trim()
+      image: dom.cardImage.value.trim(),
+      source: dom.cardSource.value,
+      officialId: dom.officialId.value.trim()
     };
   }
 
@@ -452,7 +557,9 @@
         ? raw[status].map((card) => ({
             name: String(card.name || "Unnamed Card"),
             type: String(card.type || "Card"),
-            image: String(card.image || card.imageUrl || "")
+            image: String(card.image || card.imageUrl || ""),
+            source: String(card.source || "custom"),
+            officialId: String(card.officialId || card.official_id || "")
           }))
         : [];
     });
@@ -490,5 +597,14 @@
         "'": "&#039;"
       }[char];
     });
+  }
+
+  function initials(name) {
+    return String(name || "CCF")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join("") || "CCF";
   }
 })();

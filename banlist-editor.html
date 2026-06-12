@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
-  <script src="api-client.js?v=2" defer></script>
-  <script src="banlist-editor.js?v=2" defer></script>
+  <script src="api-client.js?v=3" defer></script>
+  <script src="banlist-editor.js?v=3" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -91,7 +91,10 @@
     <section id="adminWorkspace" class="hidden">
       <div class="tool-surface editor-panel admin-session">
         <div>
-          <strong id="sessionMeta">Logged in</strong>
+          <div class="profile-chip">
+            <span id="sessionAvatar" class="profile-avatar" aria-hidden="true"></span>
+            <strong id="sessionMeta">Logged in</strong>
+          </div>
           <span id="sessionRole" class="pill aqua">Admin</span>
         </div>
         <div class="action-row">
@@ -107,6 +110,31 @@
           <button id="logoutButton" type="button">Log Out</button>
         </div>
       </div>
+
+      <section class="tool-surface editor-panel profile-panel">
+        <div class="result-meta">
+          <span>Profile</span>
+          <button id="saveProfileButton" type="button">Save Profile</button>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Display Name</span>
+            <input id="profileDisplayName" type="text" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Profile Color</span>
+            <input id="profileColor" type="color" value="#45d5c6" />
+          </label>
+          <label class="field span-2">
+            <span>Avatar URL</span>
+            <input id="profileAvatarUrl" type="url" />
+          </label>
+          <label class="field span-2">
+            <span>Bio</span>
+            <textarea id="profileBio"></textarea>
+          </label>
+        </div>
+      </section>
 
       <div class="admin-tabs" role="tablist" aria-label="Admin views">
         <button class="status-tab active" type="button" data-admin-tab="banlist">Banlist</button>
@@ -139,7 +167,25 @@
               <span id="banEditorStatus">No card selected</span>
               <strong id="banEditorCount">0 cards</strong>
             </div>
+            <div class="official-search-panel">
+              <label class="field">
+                <span>Official Card Search</span>
+                <input id="officialCardSearch" type="search" placeholder="Search YGOPRODeck..." autocomplete="off" />
+              </label>
+              <div id="officialCardResults" class="official-card-results"></div>
+            </div>
             <div class="form-grid">
+              <label class="field">
+                <span>Source</span>
+                <select id="cardSource">
+                  <option value="custom">Custom</option>
+                  <option value="official">Official</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Official ID</span>
+                <input id="officialId" type="text" />
+              </label>
               <label class="field">
                 <span>Name</span>
                 <input id="cardName" type="text" />

@@ -884,6 +884,38 @@ h3 {
   margin-bottom: 16px;
 }
 
+.profile-panel {
+  margin-bottom: 16px;
+}
+
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-position: center;
+  background-size: cover;
+  color: #041313;
+  display: inline-grid;
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 950;
+  place-items: center;
+}
+
+.profile-avatar.small {
+  width: 32px;
+  height: 32px;
+  font-size: 11px;
+}
+
 .compact-field {
   min-width: min(220px, 100%);
 }
@@ -920,6 +952,59 @@ h3 {
   margin: 4px 0 0;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.official-search-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.official-card-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.official-card-result {
+  min-height: 72px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.official-card-result span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.official-card-result strong,
+.official-card-result small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-card-result small {
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.official-card-thumb {
+  width: 38px;
+  height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-strong);
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.official-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .json-preview {
