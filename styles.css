@@ -1007,6 +1007,62 @@ h3 {
   display: block;
 }
 
+.chat-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.chat-messages {
+  max-height: min(520px, 58vh);
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.chat-message {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+
+.chat-message-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-message-meta span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.chat-message p {
+  margin: 4px 0 0;
+  color: var(--muted-strong);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-composer {
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding-top: 12px;
+  align-items: end;
+}
+
+.chat-composer textarea {
+  min-height: 76px;
+}
+
 .json-preview {
   min-height: 260px;
   font-family: "Cascadia Mono", Consolas, monospace;
@@ -1086,7 +1142,8 @@ h3 {
   }
 
   .admin-session,
-  .admin-list-item {
+  .admin-list-item,
+  .chat-composer {
     grid-template-columns: 1fr;
   }
 
