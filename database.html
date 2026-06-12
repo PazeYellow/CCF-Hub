@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCF Card Database</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="site.js" defer></script>
+  <script src="custom-cards-config.js" defer></script>
+  <script src="custom-cards.js" defer></script>
+</head>
+<body data-page="database">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="index.html" aria-label="CCF home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>CCF<small>Custom Card Format</small></span>
+      </a>
+
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-link" data-nav="home" href="index.html">Home</a>
+        <a class="nav-link" data-nav="database" href="database.html">Database</a>
+        <a class="nav-link" data-nav="banlist" href="banlist.html">Banlist</a>
+        <a class="nav-link" data-nav="calendar" href="calendar.html">Calendar</a>
+        <a class="button discord" href="https://discord.gg/arWVaBH9U5" target="_blank" rel="noreferrer">Discord</a>
+        <button type="button" data-theme-toggle onclick="toggleTheme()">Light</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-shell">
+    <section class="page-intro" aria-labelledby="pageTitle">
+      <div>
+        <p class="page-kicker">Custom Cards</p>
+        <h1 id="pageTitle">CCF Card Database</h1>
+        <p class="lead">Search custom cards by name, type, status, tags, and effect text from the live JSONBin database.</p>
+      </div>
+      <a class="button primary" href="https://discord.gg/arWVaBH9U5" target="_blank" rel="noreferrer">Join Discord</a>
+    </section>
+
+    <section class="tool-surface" aria-label="Card search filters">
+      <div class="toolbar">
+        <label class="field">
+          <span>Search</span>
+          <input id="cardSearch" class="search-input" type="search" placeholder="Card name, tag, effect..." autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>Type</span>
+          <select id="typeFilter">
+            <option value="all">All types</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Status</span>
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Sort</span>
+          <select id="sortCards">
+            <option value="name">Name</option>
+            <option value="type">Type</option>
+            <option value="status">Status</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <div id="cardLoadState" class="load-state">Loading custom-card database...</div>
+
+    <section class="database-layout" aria-label="Custom card database">
+      <div class="database-results">
+        <div class="result-meta">
+          <span id="databaseStatus">Live custom-card database</span>
+          <strong id="resultCount">0 cards</strong>
+        </div>
+        <div id="cardResults" class="card-grid"></div>
+      </div>
+
+      <aside id="cardDetail" class="tool-surface detail-panel" aria-label="Selected card details"></aside>
+    </section>
+  </main>
+</body>
+</html>
