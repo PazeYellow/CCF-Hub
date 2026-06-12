@@ -126,11 +126,11 @@
     button.type = "button";
     button.className = "card-result";
     button.classList.toggle("active", card.id === state.selectedId);
+    button.setAttribute("data-card-id", card.id);
     button.addEventListener("click", function (e) {
       e.preventDefault();
       state.selectedId = card.id;
-      renderDetail(card);
-      updateActiveCard();
+      updateCardDisplay();
     });
 
     const art = document.createElement("div");
@@ -158,12 +158,19 @@
     return button;
   }
 
-  function updateActiveCard() {
+  function updateCardDisplay() {
+    // Update active state on all cards
     document.querySelectorAll(".card-result").forEach((btn) => {
-      const isActive = btn.querySelector(".card-name")?.textContent === 
-        state.cards.find(c => c.id === state.selectedId)?.name;
-      btn.classList.toggle("active", isActive);
+      btn.classList.remove("active");
     });
+    const activeBtn = document.querySelector(`[data-card-id="${state.selectedId}"]`);
+    if (activeBtn) {
+      activeBtn.classList.add("active");
+    }
+
+    // Update detail panel
+    const selectedCard = state.cards.find((card) => card.id === state.selectedId);
+    renderDetail(selectedCard);
   }
 
   function renderDetail(card) {
@@ -314,7 +321,8 @@
       ? "Custom-card database is not connected yet."
       : "Live custom-card database";
 
-    renderDetail(state.cards.find((card) => card.id === state.selectedId));
+    const selectedCard = state.cards.find((card) => card.id === state.selectedId);
+    renderDetail(selectedCard);
     renderPagination();
   }
 
