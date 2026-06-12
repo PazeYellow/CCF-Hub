@@ -1,8 +1,9 @@
 (function () {
   const TOKEN_KEY = "ccf_admin_token";
+  const DEFAULT_API_BASE_URL = "https://ccf-hub.theyellowlightsader.workers.dev";
 
   function apiBase() {
-    const configured = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || "").trim().replace(/\/+$/, "");
+    const configured = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, "");
     if (!configured || configured.includes("YOUR-WORKER-SUBDOMAIN")) {
       throw new Error("Set apiBaseUrl in api-config.js after deploying the Cloudflare Worker.");
     }

@@ -1,5 +1,6 @@
 (function () {
   const CARDS_PER_PAGE = 12;
+  const DEFAULT_API_BASE_URL = "https://ccf-hub.theyellowlightsader.workers.dev";
   
   const state = {
     cards: [],
@@ -10,7 +11,7 @@
   };
 
   function apiUrl(path) {
-    const base = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || "").replace(/\/+$/, "");
+    const base = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
     return `${base}${path}`;
   }
 

@@ -6,7 +6,7 @@
   <title>CCF Banlist</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="site.js" defer></script>
-  <script src="api-config.js" defer></script>
+  <script src="api-config.js?v=2" defer></script>
 </head>
 <body data-page="banlist">
   <header class="site-header">
@@ -67,9 +67,10 @@
   <script>
     let banlistData = { forbidden: [], limited: [], semi_limited: [] };
     let currentTab = "forbidden";
+    const DEFAULT_API_BASE_URL = "https://ccf-hub.theyellowlightsader.workers.dev";
 
     function apiUrl(path) {
-      const base = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || "").replace(/\/+$/, "");
+      const base = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
       return `${base}${path}`;
     }
 
