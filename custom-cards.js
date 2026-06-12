@@ -9,15 +9,9 @@
     currentPage: 1
   };
 
-  const config = window.CCF_CUSTOM_CARD_CONFIG || {};
-
-  function ready() {
-    return Boolean(
-      config.binId &&
-      config.readOnlyKey &&
-      !config.binId.includes("PASTE_") &&
-      !config.readOnlyKey.includes("PASTE_")
-    );
+  function apiUrl(path) {
+    const base = (window.CCF_API_CONFIG && window.CCF_API_CONFIG.apiBaseUrl || "").replace(/\/+$/, "");
+    return `${base}${path}`;
   }
 
   function normaliseTags(tags) {
@@ -337,7 +331,7 @@
     const total = state.cards.length;
     count.textContent = `${state.filtered.length} of ${total} cards`;
     statusText.textContent = state.source === "not-connected"
-      ? "Custom-card database is not connected yet."
+      ? "Cloudflare API is not connected yet."
       : "Live custom-card database";
 
     const selectedCard = state.cards[state.selectedCardIndex];
@@ -354,30 +348,17 @@
     const loader = document.getElementById("cardLoadState");
     loader.textContent = "Loading custom-card database...";
 
-    if (!ready()) {
-      state.cards = [];
-      state.source = "not-connected";
-      loader.className = "notice";
-      loader.textContent = "Custom-card JSONBin is not connected yet. Fill in custom-cards-config.js with the new bin ID and read-only access key.";
-      hydrateFilters();
-      render();
-      return;
-    }
-
     try {
-      const authHeader = config.authHeader || "X-Access-Key";
-      const response = await fetch(`https://api.jsonbin.io/v3/b/${encodeURIComponent(config.binId)}/latest`, {
-        headers: {
-          [authHeader]: config.readOnlyKey
-        }
+      const response = await fetch(apiUrl("/api/database"), {
+        headers: { "Accept": "application/json" }
       });
 
       if (!response.ok) {
-        throw new Error(`JSONBin returned ${response.status}`);
+        throw new Error(`Cloudflare API returned ${response.status}`);
       }
 
       const data = await response.json();
-      const cards = normaliseDatabase(data.record || data);
+      const cards = normaliseDatabase(data);
 
       if (!cards) {
         throw new Error("No cards array found");
@@ -392,7 +373,7 @@
       state.cards = [];
       state.source = "error";
       loader.className = "notice danger";
-      loader.textContent = `Could not load JSONBin data: ${error.message}.`;
+      loader.textContent = `Could not load Cloudflare data: ${error.message}.`;
       hydrateFilters();
       render();
     }

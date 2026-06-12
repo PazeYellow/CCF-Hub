@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCF Banlist Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="site.js" defer></script>
+  <script src="api-config.js" defer></script>
+  <script src="api-client.js" defer></script>
+  <script src="banlist-editor.js" defer></script>
+</head>
+<body data-page="editor">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="index.html" aria-label="CCF home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>CCF<small>Custom Card Format</small></span>
+      </a>
+
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-link" data-nav="home" href="index.html">Home</a>
+        <a class="nav-link" data-nav="database" href="database.html">Database</a>
+        <a class="nav-link" data-nav="banlist" href="banlist.html">Banlist</a>
+        <a class="nav-link" data-nav="calendar" href="calendar.html">Calendar</a>
+        <a class="nav-link" data-nav="editor" href="banlist-editor.html">Admin</a>
+        <button type="button" data-theme-toggle onclick="toggleTheme()">Light</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-shell">
+    <section class="page-intro" aria-labelledby="pageTitle">
+      <div>
+        <p class="page-kicker">Admin</p>
+        <h1 id="pageTitle">Banlist Editor</h1>
+        <p class="lead">Manage restrictions, review requests, and approve CCF staff accounts.</p>
+      </div>
+      <a class="button" href="banlist.html">View Banlist</a>
+    </section>
+
+    <section id="authPanel" class="editor-layout">
+      <div class="tool-surface editor-panel">
+        <h2>Log In</h2>
+        <div class="form-grid">
+          <label class="field span-2">
+            <span>Email</span>
+            <input id="loginEmail" type="email" autocomplete="email" />
+          </label>
+          <label class="field span-2">
+            <span>Password</span>
+            <input id="loginPassword" type="password" autocomplete="current-password" />
+          </label>
+        </div>
+        <div class="action-row">
+          <button id="loginButton" class="primary" type="button">Log In</button>
+        </div>
+      </div>
+
+      <div class="tool-surface editor-panel">
+        <h2>Request Account</h2>
+        <div class="form-grid">
+          <label class="field">
+            <span>Name</span>
+            <input id="signupName" type="text" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Role</span>
+            <select id="signupRole">
+              <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
+            </select>
+          </label>
+          <label class="field span-2">
+            <span>Email</span>
+            <input id="signupEmail" type="email" autocomplete="email" />
+          </label>
+          <label class="field span-2">
+            <span>Password</span>
+            <input id="signupPassword" type="password" autocomplete="new-password" />
+          </label>
+        </div>
+        <div class="action-row">
+          <button id="signupButton" type="button">Send Request</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="authMessage" class="notice hidden"></div>
+
+    <section id="adminWorkspace" class="hidden">
+      <div class="tool-surface editor-panel admin-session">
+        <div>
+          <strong id="sessionMeta">Logged in</strong>
+          <span id="sessionRole" class="pill aqua">Admin</span>
+        </div>
+        <div class="action-row">
+          <label class="field compact-field">
+            <span>Current Password</span>
+            <input id="currentPassword" type="password" autocomplete="current-password" />
+          </label>
+          <label class="field compact-field">
+            <span>New Password</span>
+            <input id="newPassword" type="password" autocomplete="new-password" />
+          </label>
+          <button id="changePasswordButton" type="button">Change Password</button>
+          <button id="logoutButton" type="button">Log Out</button>
+        </div>
+      </div>
+
+      <div class="admin-tabs" role="tablist" aria-label="Admin views">
+        <button class="status-tab active" type="button" data-admin-tab="banlist">Banlist</button>
+        <button class="status-tab" type="button" data-admin-tab="requests">Requests</button>
+        <button class="status-tab owner-only" type="button" data-admin-tab="accounts">Accounts</button>
+      </div>
+
+      <section id="banlistView" class="admin-view">
+        <div class="editor-layout">
+          <aside class="tool-surface editor-panel sticky">
+            <div class="form-grid">
+              <label class="field span-2">
+                <span>Search</span>
+                <input id="banSearch" type="search" placeholder="Card name..." autocomplete="off" />
+              </label>
+              <label class="field span-2">
+                <span>Section</span>
+                <select id="banStatusFilter">
+                  <option value="forbidden">Forbidden</option>
+                  <option value="limited">Limited</option>
+                  <option value="semi_limited">Semi-Limited</option>
+                </select>
+              </label>
+            </div>
+            <div id="banCardList" class="editor-list"></div>
+          </aside>
+
+          <section class="tool-surface editor-panel">
+            <div class="result-meta">
+              <span id="banEditorStatus">No card selected</span>
+              <strong id="banEditorCount">0 cards</strong>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span>Name</span>
+                <input id="cardName" type="text" />
+              </label>
+              <label class="field">
+                <span>Section</span>
+                <select id="cardStatus">
+                  <option value="forbidden">Forbidden</option>
+                  <option value="limited">Limited</option>
+                  <option value="semi_limited">Semi-Limited</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Type</span>
+                <input id="cardType" type="text" />
+              </label>
+              <label class="field">
+                <span>Image URL</span>
+                <input id="cardImage" type="url" />
+              </label>
+              <label class="field span-2">
+                <span>Request Note</span>
+                <textarea id="requestNote"></textarea>
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="newBanCard" type="button">New</button>
+              <button id="saveBanCard" class="primary owner-only" type="button">Save Directly</button>
+              <button id="deleteBanCard" class="owner-only" type="button">Delete</button>
+              <button id="submitBanRequest" type="button">Submit Request</button>
+            </div>
+            <div id="editorMessage" class="notice hidden"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="requestsView" class="admin-view hidden">
+        <div class="tool-surface editor-panel">
+          <div class="result-meta">
+            <span>Banlist requests</span>
+            <button id="refreshRequests" type="button">Refresh</button>
+          </div>
+          <div id="requestList" class="admin-list"></div>
+        </div>
+      </section>
+
+      <section id="accountsView" class="admin-view hidden owner-only">
+        <div class="tool-surface editor-panel">
+          <div class="result-meta">
+            <span>Staff accounts</span>
+            <button id="refreshUsers" type="button">Refresh</button>
+          </div>
+          <div id="userList" class="admin-list"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

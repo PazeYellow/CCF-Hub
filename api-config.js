@@ -1,3 +1,3 @@
-window.CCF_API_CONFIG = window.CCF_API_CONFIG || {
+window.CCF_API_CONFIG = {
   apiBaseUrl: "https://YOUR-WORKER-SUBDOMAIN.workers.dev"
 };
