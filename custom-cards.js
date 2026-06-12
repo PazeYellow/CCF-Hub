@@ -43,7 +43,8 @@
       text: String(card.text || card.effect || card.description || ""),
       image: String(card.image || card.imageUrl || card.img || ""),
       tags: normaliseTags(card.tags),
-      updatedAt: String(card.updatedAt || "")
+      updatedAt: String(card.updatedAt || ""),
+      originalIndex: index
     };
   }
 
@@ -68,6 +69,9 @@
   }
 
   function compareCards(a, b, sortMode) {
+    if (sortMode === "release") {
+      return a.originalIndex - b.originalIndex;
+    }
     if (sortMode === "type") {
       return a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
     }
