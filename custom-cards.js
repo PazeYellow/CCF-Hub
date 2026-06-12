@@ -164,7 +164,7 @@
   }
 
   function updateCardDisplay() {
-    // Update active state on all cards
+    // Update active state on all card buttons
     document.querySelectorAll(".card-result").forEach((btn) => {
       btn.classList.remove("active");
     });
@@ -254,7 +254,13 @@
     prevBtn.addEventListener("click", () => {
       if (state.currentPage > 1) {
         state.currentPage--;
-        render();
+        const grid = document.getElementById("cardResults");
+        const startIndex = (state.currentPage - 1) * CARDS_PER_PAGE;
+        const paginatedCards = state.filtered.slice(startIndex, startIndex + CARDS_PER_PAGE);
+        grid.innerHTML = "";
+        paginatedCards.forEach((card) => grid.appendChild(renderCard(card)));
+        renderPagination();
+        document.querySelector(".page-info").textContent = `Page ${state.currentPage} of ${totalPages}`;
       }
     });
     paginationContainer.appendChild(prevBtn);
@@ -274,7 +280,13 @@
     nextBtn.addEventListener("click", () => {
       if (state.currentPage < totalPages) {
         state.currentPage++;
-        render();
+        const grid = document.getElementById("cardResults");
+        const startIndex = (state.currentPage - 1) * CARDS_PER_PAGE;
+        const paginatedCards = state.filtered.slice(startIndex, startIndex + CARDS_PER_PAGE);
+        grid.innerHTML = "";
+        paginatedCards.forEach((card) => grid.appendChild(renderCard(card)));
+        renderPagination();
+        document.querySelector(".page-info").textContent = `Page ${state.currentPage} of ${totalPages}`;
       }
     });
     paginationContainer.appendChild(nextBtn);
@@ -295,16 +307,17 @@
       .filter((card) => status === "all" || card.status === status)
       .sort((a, b) => compareCards(a, b, sortMode));
 
-    // Reset to page 1 if filters change
-    state.currentPage = 1;
-
     // Check if selected card is in filtered results
     if (!state.filtered.some((card) => card.cardIndex === state.selectedCardIndex)) {
       state.selectedCardIndex = state.filtered[0]?.cardIndex || 0;
     }
 
-    // Calculate pagination
+    // Calculate pagination safety boundaries
     const totalPages = Math.ceil(state.filtered.length / CARDS_PER_PAGE);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+
     const startIndex = (state.currentPage - 1) * CARDS_PER_PAGE;
     const endIndex = startIndex + CARDS_PER_PAGE;
     const paginatedCards = state.filtered.slice(startIndex, endIndex);
@@ -389,8 +402,14 @@
     ["cardSearch", "typeFilter", "statusFilter", "sortCards"].forEach((id) => {
       const element = document.getElementById(id);
       if (element) {
-        element.addEventListener("input", render);
-        element.addEventListener("change", render);
+        element.addEventListener("input", () => {
+          state.currentPage = 1; // Only reset pages when structural parameters change
+          render();
+        });
+        element.addEventListener("change", () => {
+          state.currentPage = 1; // Only reset pages when structural parameters change
+          render();
+        });
       }
     });
     fetchCards();
