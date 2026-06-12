@@ -4,7 +4,7 @@
   const state = {
     cards: [],
     filtered: [],
-    selectedIndex: -1,
+    selectedCard: null,
     source: "loading",
     currentPage: 1
   };
@@ -31,7 +31,8 @@
   function normaliseCard(card, index) {
     card = card || {};
     return {
-      uniqueIndex: index,
+      uniqueId: `card-${Math.random().toString(36).substr(2, 9)}`,
+      originalIndex: index,
       id: String(card.id || card.name || `card-${index}`),
       name: String(card.name || "Unnamed Card"),
       type: String(card.type || card.cardType || "Card"),
@@ -44,8 +45,7 @@
       text: String(card.text || card.effect || card.description || ""),
       image: String(card.image || card.imageUrl || card.img || ""),
       tags: normaliseTags(card.tags),
-      updatedAt: String(card.updatedAt || ""),
-      originalIndex: index
+      updatedAt: String(card.updatedAt || "")
     };
   }
 
@@ -130,11 +130,12 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "card-result";
-    button.classList.toggle("active", card.uniqueIndex === state.selectedIndex);
-    button.setAttribute("data-card-index", card.uniqueIndex);
+    button.classList.toggle("active", state.selectedCard && state.selectedCard.uniqueId === card.uniqueId);
+    button.setAttribute("data-unique-id", card.uniqueId);
+    
     button.addEventListener("click", function (e) {
       e.preventDefault();
-      state.selectedIndex = card.uniqueIndex;
+      state.selectedCard = card;
       updateCardDisplay();
     });
 
@@ -168,14 +169,13 @@
     document.querySelectorAll(".card-result").forEach((btn) => {
       btn.classList.remove("active");
     });
-    const activeBtn = document.querySelector(`[data-card-index="${state.selectedIndex}"]`);
-    if (activeBtn) {
-      activeBtn.classList.add("active");
+    if (state.selectedCard) {
+      const activeBtn = document.querySelector(`[data-unique-id="${state.selectedCard.uniqueId}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add("active");
+      }
+      renderDetail(state.selectedCard);
     }
-
-    // Update detail panel
-    const selectedCard = state.cards[state.selectedIndex];
-    renderDetail(selectedCard);
   }
 
   function renderDetail(card) {
@@ -298,8 +298,8 @@
     // Reset to page 1 if filters change
     state.currentPage = 1;
 
-    if (state.selectedIndex === -1 || !state.filtered.some((card) => card.uniqueIndex === state.selectedIndex)) {
-      state.selectedIndex = state.filtered[0]?.uniqueIndex || -1;
+    if (!state.selectedCard || !state.filtered.some((card) => card.uniqueId === state.selectedCard.uniqueId)) {
+      state.selectedCard = state.filtered[0] || null;
     }
 
     // Calculate pagination
@@ -326,8 +326,7 @@
       ? "Custom-card database is not connected yet."
       : "Live custom-card database";
 
-    const selectedCard = state.cards[state.selectedIndex];
-    renderDetail(selectedCard);
+    renderDetail(state.selectedCard);
     renderPagination();
   }
 
