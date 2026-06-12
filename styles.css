@@ -848,10 +848,19 @@ h3 {
 .editor-list button {
   justify-content: flex-start;
   text-align: left;
+  display: grid;
+  align-content: center;
+  gap: 2px;
 }
 
 .editor-list button.active {
   border-color: var(--gold);
+}
+
+.editor-list button small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
 }
 
 .form-grid {
@@ -1105,6 +1114,43 @@ h3 {
   display: block;
 }
 
+.database-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  align-items: start;
+}
+
+.database-preview {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  position: sticky;
+  top: 86px;
+}
+
+.database-preview .image-preview {
+  width: 100%;
+}
+
+.database-preview h2 {
+  font-size: 20px;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+
+.editor-count-row {
+  margin: 12px 0 6px;
+}
+
+.dirty-text {
+  color: var(--gold);
+  font-weight: 850;
+}
+
 .notice {
   border-left: 4px solid var(--gold);
   border-radius: var(--radius);
@@ -1123,7 +1169,8 @@ h3 {
   .page-intro,
   .home-hero,
   .database-layout,
-  .editor-layout {
+  .editor-layout,
+  .database-editor-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1148,7 +1195,8 @@ h3 {
   }
 
   .detail-panel,
-  .editor-panel.sticky {
+  .editor-panel.sticky,
+  .database-preview {
     position: static;
   }
 

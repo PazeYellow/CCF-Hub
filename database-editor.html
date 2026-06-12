@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Database Editor</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
-  <script src="api-client.js?v=2" defer></script>
-  <script src="database-editor.js?v=2" defer></script>
+  <script src="api-client.js?v=4" defer></script>
+  <script src="database-editor.js?v=5" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -34,9 +34,12 @@
       <div>
         <p class="page-kicker">Owner Tool</p>
         <h1 id="pageTitle">Database Editor</h1>
-        <p class="lead">Edit the custom card database stored in Cloudflare.</p>
+        <p class="lead">Create, edit, search, and publish custom cards stored in Cloudflare.</p>
       </div>
-      <a class="button" href="banlist-editor.html">Banlist Admin</a>
+      <div class="action-row">
+        <a class="button" href="banlist-editor.html">Banlist Admin</a>
+        <a class="button" href="database.html">View Database</a>
+      </div>
     </section>
 
     <section id="authPanel" class="tool-surface editor-panel">
@@ -59,77 +62,133 @@
 
     <section id="editorWorkspace" class="hidden">
       <div class="tool-surface editor-panel admin-session">
-        <strong id="sessionMeta">Logged in</strong>
+        <div class="profile-chip">
+          <span id="sessionAvatar" class="profile-avatar" aria-hidden="true"></span>
+          <strong id="sessionMeta">Logged in</strong>
+        </div>
         <div class="action-row">
           <button id="syncDatabase" type="button">Sync</button>
+          <button id="saveLive" class="primary" type="button">Publish Database</button>
           <button id="logoutButton" type="button">Log Out</button>
         </div>
       </div>
 
       <div class="editor-layout">
         <aside class="tool-surface editor-panel sticky">
-          <label class="field">
-            <span>Search</span>
-            <input id="cardSearch" type="search" autocomplete="off" />
-          </label>
+          <div class="form-grid">
+            <label class="field span-2">
+              <span>Search</span>
+              <input id="cardSearch" type="search" placeholder="Name, tag, effect..." autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Status</span>
+              <select id="statusFilter">
+                <option value="all">All</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Source</span>
+              <select id="sourceFilter">
+                <option value="all">All</option>
+                <option value="custom">Custom</option>
+                <option value="official">Official</option>
+              </select>
+            </label>
+          </div>
+          <div class="result-meta editor-count-row">
+            <span id="dirtyState">No unpublished changes</span>
+            <strong id="cardCount">0 cards</strong>
+          </div>
           <div id="cardList" class="editor-list"></div>
         </aside>
 
         <section class="tool-surface editor-panel">
           <div class="result-meta">
             <span id="editorStatus">No card selected</span>
-            <strong id="cardCount">0 cards</strong>
+            <strong id="selectedIndexMeta">-</strong>
           </div>
-          <div class="form-grid">
-            <label class="field">
-              <span>Card Name</span>
-              <input id="name" type="text" />
-            </label>
-            <label class="field">
-              <span>Type</span>
-              <input id="type" type="text" />
-            </label>
-            <label class="field">
-              <span>Attribute</span>
-              <input id="attribute" type="text" />
-            </label>
-            <label class="field">
-              <span>Race/Subtype</span>
-              <input id="race" type="text" />
-            </label>
-            <label class="field">
-              <span>Level/Rank</span>
-              <input id="level" type="text" />
-            </label>
-            <label class="field">
-              <span>Status</span>
-              <input id="statusField" type="text" />
-            </label>
-            <label class="field">
-              <span>ATK</span>
-              <input id="atk" type="text" />
-            </label>
-            <label class="field">
-              <span>DEF</span>
-              <input id="def" type="text" />
-            </label>
-            <label class="field span-2">
-              <span>Image URL</span>
-              <input id="image" type="url" />
-            </label>
-            <label class="field span-2">
-              <span>Tags</span>
-              <input id="tags" type="text" />
-            </label>
-            <label class="field span-2">
-              <span>Effect Text</span>
-              <textarea id="text"></textarea>
-            </label>
+
+          <div class="database-editor-grid">
+            <div>
+              <div class="official-search-panel">
+                <label class="field">
+                  <span>Official Card Search</span>
+                  <input id="officialCardSearch" type="search" placeholder="Search YGOPRODeck..." autocomplete="off" />
+                </label>
+                <div id="officialCardResults" class="official-card-results"></div>
+              </div>
+
+              <div class="form-grid">
+                <label class="field">
+                  <span>Source</span>
+                  <select id="source">
+                    <option value="custom">Custom</option>
+                    <option value="official">Official</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <input id="statusField" type="text" placeholder="Draft, Testing, Released..." />
+                </label>
+                <label class="field">
+                  <span>Card Name</span>
+                  <input id="name" type="text" />
+                </label>
+                <label class="field">
+                  <span>Type</span>
+                  <input id="type" type="text" />
+                </label>
+                <label class="field">
+                  <span>Attribute</span>
+                  <input id="attribute" type="text" />
+                </label>
+                <label class="field">
+                  <span>Race/Subtype</span>
+                  <input id="race" type="text" />
+                </label>
+                <label class="field">
+                  <span>Level/Rank</span>
+                  <input id="level" type="text" />
+                </label>
+                <label class="field">
+                  <span>Official ID</span>
+                  <input id="officialId" type="text" />
+                </label>
+                <label class="field">
+                  <span>ATK</span>
+                  <input id="atk" type="text" />
+                </label>
+                <label class="field">
+                  <span>DEF</span>
+                  <input id="def" type="text" />
+                </label>
+                <label class="field span-2">
+                  <span>Image URL</span>
+                  <input id="image" type="url" />
+                </label>
+                <label class="field span-2">
+                  <span>Tags</span>
+                  <input id="tags" type="text" placeholder="Comma separated" />
+                </label>
+                <label class="field span-2">
+                  <span>Effect Text</span>
+                  <textarea id="text"></textarea>
+                </label>
+              </div>
+            </div>
+
+            <aside class="database-preview">
+              <div id="imagePreview" class="image-preview">CCF</div>
+              <h2 id="previewName">No card selected</h2>
+              <div id="previewPills" class="pill-row"></div>
+              <p id="previewText" class="card-text">Create or select a card to preview it.</p>
+            </aside>
           </div>
+
           <div class="action-row">
             <button id="newCard" type="button">New</button>
+            <button id="duplicateCard" type="button">Duplicate</button>
             <button id="saveLocal" type="button">Save Draft</button>
-            <button id="saveLive" class="primary" type="button">Save to Cloudflare</button>
             <button id="deleteCard" type="button">Delete</button>
           </div>
           <div id="editorMessage" class="notice hidden"></div>
