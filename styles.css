@@ -543,6 +543,18 @@ h3 {
   overflow: hidden;
 }
 
+.effect-block,
+.database-preview .card-text {
+  white-space: pre-line;
+}
+
+.database-preview .card-text {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: initial;
+  overflow: visible;
+}
+
 .pill-row,
 .tag-list {
   display: flex;

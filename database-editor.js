@@ -11,7 +11,7 @@
   const fields = [
     "source", "officialId", "cardKind", "spellTrapProperty", "name", "type",
     "attribute", "race", "level", "pendulumScale", "linkRating", "statusField",
-    "atk", "def", "image", "tags", "text"
+    "atk", "def", "image", "tags", "pendulumEffect", "text"
   ];
   const dom = {};
 
@@ -49,7 +49,14 @@
       dom[field].addEventListener("input", renderPreviewFromForm);
       dom[field].addEventListener("change", renderPreviewFromForm);
     });
-    getChecks("monsterAbilities").forEach((input) => input.addEventListener("change", renderPreviewFromForm));
+    dom.cardKind.addEventListener("change", function () {
+      applyCardKindRules(true);
+      renderPreviewFromForm();
+    });
+    getChecks("monsterAbilities").forEach((input) => input.addEventListener("change", function () {
+      applyCardKindRules(input.value === "Pendulum");
+      renderPreviewFromForm();
+    }));
     getChecks("linkArrows").forEach((input) => input.addEventListener("change", renderPreviewFromForm));
   }
 
@@ -195,6 +202,7 @@
       card.status,
       card.monsterAbilities.join(" "),
       card.linkArrows.join(" "),
+      card.pendulumEffect,
       card.text,
       card.tags.join(" ")
     ].join(" ").toLowerCase().includes(query);
@@ -298,6 +306,7 @@
       dom.statusField.value = "Draft";
       setChecks("monsterAbilities", []);
       setChecks("linkArrows", []);
+      applyCardKindRules(false);
       dom.editorStatus.textContent = "No card selected";
       dom.selectedIndexMeta.textContent = "-";
       renderPreview(null);
@@ -310,6 +319,7 @@
     });
     setChecks("monsterAbilities", card.monsterAbilities);
     setChecks("linkArrows", card.linkArrows);
+    applyCardKindRules(false);
 
     dom.editorStatus.textContent = card.name;
     dom.selectedIndexMeta.textContent = `Card ${state.selectedIndex + 1}`;
@@ -318,27 +328,33 @@
 
   function formValues() {
     const current = state.cards[state.selectedIndex] || {};
+    const cardKind = normaliseCardKind(dom.cardKind.value);
+    const monsterMode = cardKind === "monster";
+    const monsterAbilities = monsterMode ? readChecks("monsterAbilities") : [];
+    const pendulumMode = monsterAbilities.includes("Pendulum");
+
     return normaliseCard({
       ...current,
       id: current.id || `card-${Date.now()}`,
       source: dom.source.value,
       officialId: dom.officialId.value.trim(),
-      cardKind: dom.cardKind.value,
-      spellTrapProperty: dom.spellTrapProperty.value,
+      cardKind,
+      spellTrapProperty: monsterMode ? "" : dom.spellTrapProperty.value,
       name: dom.name.value.trim() || "Unnamed Card",
-      type: dom.type.value.trim() || "Monster",
-      attribute: dom.attribute.value.trim(),
-      race: dom.race.value.trim(),
-      level: dom.level.value.trim(),
-      pendulumScale: dom.pendulumScale.value.trim(),
-      linkRating: dom.linkRating.value.trim(),
+      type: dom.type.value.trim() || defaultTypeForKind(cardKind),
+      attribute: monsterMode ? dom.attribute.value.trim() : "",
+      race: monsterMode ? dom.race.value.trim() : "",
+      level: monsterMode ? dom.level.value.trim() : "",
+      pendulumScale: pendulumMode ? dom.pendulumScale.value.trim() : "",
+      linkRating: monsterMode ? dom.linkRating.value.trim() : "",
       status: dom.statusField.value.trim() || "Draft",
-      atk: dom.atk.value.trim(),
-      def: dom.def.value.trim(),
+      atk: monsterMode ? dom.atk.value.trim() : "",
+      def: monsterMode ? dom.def.value.trim() : "",
       image: dom.image.value.trim(),
       tags: dom.tags.value.split(",").map((tag) => tag.trim()).filter(Boolean),
-      monsterAbilities: readChecks("monsterAbilities"),
-      linkArrows: readChecks("linkArrows"),
+      monsterAbilities,
+      linkArrows: monsterMode ? readChecks("linkArrows") : [],
+      pendulumEffect: pendulumMode ? dom.pendulumEffect.value.trim() : "",
       text: dom.text.value.trim()
     });
   }
@@ -365,7 +381,7 @@
     }
 
     dom.previewName.textContent = card?.name || "No card selected";
-    dom.previewText.textContent = card?.text || "Create or select a card to preview it.";
+    dom.previewText.textContent = previewText(card);
     dom.previewPills.innerHTML = "";
 
     if (!card) return;
@@ -450,6 +466,7 @@
       atk: card.atk,
       def: card.def,
       image: card.image,
+      pendulumEffect: card.pendulumEffect,
       text: card.text,
       monsterAbilities: card.monsterAbilities,
       linkArrows: card.linkArrows,
@@ -467,7 +484,12 @@
 
   function normaliseCard(card) {
     const cardKind = normaliseCardKind(card.cardKind || card.card_kind || card.frameType || card.frame_type || card.type);
-    const spellTrapProperty = card.spellTrapProperty || card.spell_trap_property || (cardKind === "spell" || cardKind === "trap" ? card.race : "");
+    const monsterMode = cardKind === "monster";
+    const spellTrapProperty = monsterMode ? "" : (card.spellTrapProperty || card.spell_trap_property || card.race || "");
+    const splitText = splitPendulumDescription(card.text || card.effect || card.description || "");
+    const monsterAbilities = monsterMode ? normaliseList(card.monsterAbilities || card.monster_abilities || inferAbilities(card.type)) : [];
+    const pendulumMode = monsterAbilities.includes("Pendulum");
+
     return {
       id: String(card.id || `card-${Date.now()}`),
       source: String(card.source || "custom"),
@@ -476,21 +498,69 @@
       spellTrapProperty: String(spellTrapProperty || ""),
       name: String(card.name || "Unnamed Card"),
       type: String(card.type || card.cardType || "Card"),
-      attribute: String(card.attribute || ""),
-      race: cardKind === "monster" ? String(card.race || card.subtype || "") : "",
-      level: valueText(card.level ?? card.rank ?? card.linkRating ?? ""),
-      pendulumScale: valueText(card.pendulumScale ?? card.pendulum_scale ?? card.scale ?? ""),
-      linkRating: valueText(card.linkRating ?? card.link_rating ?? card.linkval ?? ""),
+      attribute: monsterMode ? String(card.attribute || "") : "",
+      race: monsterMode ? String(card.race || card.subtype || "") : "",
+      level: monsterMode ? valueText(card.level ?? card.rank ?? card.linkRating ?? "") : "",
+      pendulumScale: pendulumMode ? valueText(card.pendulumScale ?? card.pendulum_scale ?? card.scale ?? "") : "",
+      linkRating: monsterMode ? valueText(card.linkRating ?? card.link_rating ?? card.linkval ?? "") : "",
       status: String(card.status || card.releaseStatus || "Released"),
-      atk: valueText(card.atk ?? ""),
-      def: valueText(card.def ?? ""),
+      atk: monsterMode ? valueText(card.atk ?? "") : "",
+      def: monsterMode ? valueText(card.def ?? "") : "",
       image: String(card.image || card.imageUrl || card.img || ""),
       tags: normaliseTags(card.tags),
-      monsterAbilities: normaliseList(card.monsterAbilities || card.monster_abilities || inferAbilities(card.type)),
-      linkArrows: normaliseList(card.linkArrows || card.link_arrows || card.linkmarkers),
-      text: String(card.text || card.effect || card.description || ""),
+      monsterAbilities,
+      linkArrows: monsterMode ? normaliseList(card.linkArrows || card.link_arrows || card.linkmarkers) : [],
+      pendulumEffect: pendulumMode ? String(card.pendulumEffect || card.pendulum_effect || card.pend_desc || splitText.pendulum || "") : "",
+      text: String(card.monsterText || card.monster_text || card.monster_desc || splitText.monster || card.text || card.effect || card.description || ""),
       updatedAt: String(card.updatedAt || "")
     };
+  }
+
+  function applyCardKindRules(clearHidden) {
+    const monsterMode = dom.cardKind.value === "monster";
+    const pendulumMode = monsterMode && readChecks("monsterAbilities").includes("Pendulum");
+
+    document.querySelectorAll(".monster-field").forEach((element) => {
+      element.classList.toggle("hidden", !monsterMode);
+    });
+    document.querySelectorAll(".spell-trap-field").forEach((element) => {
+      element.classList.toggle("hidden", monsterMode);
+    });
+    document.querySelectorAll(".pendulum-field").forEach((element) => {
+      element.classList.toggle("hidden", !pendulumMode);
+    });
+
+    if (!clearHidden) return;
+
+    updateTypeForKind(monsterMode);
+
+    if (!monsterMode) {
+      clearMonsterFields();
+      return;
+    }
+
+    dom.spellTrapProperty.value = "";
+    if (!pendulumMode) {
+      dom.pendulumScale.value = "";
+      dom.pendulumEffect.value = "";
+    }
+  }
+
+  function clearMonsterFields() {
+    ["attribute", "race", "level", "pendulumScale", "linkRating", "atk", "def", "pendulumEffect"].forEach((field) => {
+      dom[field].value = "";
+    });
+    setChecks("monsterAbilities", []);
+    setChecks("linkArrows", []);
+  }
+
+  function previewText(card) {
+    if (!card) return "Create or select a card to preview it.";
+
+    const sections = [];
+    if (card.pendulumEffect) sections.push(`Pendulum Effect:\n${card.pendulumEffect}`);
+    if (card.text) sections.push(`${card.pendulumEffect ? "Effect Text:\n" : ""}${card.text}`);
+    return sections.join("\n\n") || "No card text has been added yet.";
   }
 
   function normaliseTags(tags) {
@@ -512,6 +582,34 @@
     if (text.includes("spell")) return "spell";
     if (text.includes("trap")) return "trap";
     return "monster";
+  }
+
+  function defaultTypeForKind(cardKind) {
+    if (cardKind === "spell") return "Spell Card";
+    if (cardKind === "trap") return "Trap Card";
+    return "Monster";
+  }
+
+  function updateTypeForKind(monsterMode) {
+    const currentType = dom.type.value.trim();
+    const simpleTypes = ["", "Monster", "Spell Card", "Trap Card"];
+    if (!simpleTypes.includes(currentType)) return;
+    dom.type.value = monsterMode ? "Monster" : defaultTypeForKind(dom.cardKind.value);
+  }
+
+  function splitPendulumDescription(text) {
+    const value = String(text || "");
+    const pendulumMatch = value.match(/\[\s*Pendulum Effect\s*\]([\s\S]*?)(?:-{3,}|\[\s*Monster Effect\s*\])/i);
+    const monsterMatch = value.match(/\[\s*Monster Effect\s*\]([\s\S]*)/i);
+
+    return {
+      pendulum: cleanupEffectText(pendulumMatch ? pendulumMatch[1] : ""),
+      monster: cleanupEffectText(monsterMatch ? monsterMatch[1] : "")
+    };
+  }
+
+  function cleanupEffectText(text) {
+    return String(text || "").replace(/^-{3,}/, "").trim();
   }
 
   function inferAbilities(type) {

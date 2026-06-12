@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Database Editor</title>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="database-editor.js?v=6" defer></script>
+  <script src="database-editor.js?v=7" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -138,7 +138,7 @@
                     <option value="trap">Trap</option>
                   </select>
                 </label>
-                <label class="field">
+                <label class="field spell-trap-field hidden">
                   <span>Spell/Trap Property</span>
                   <select id="spellTrapProperty">
                     <option value="">None</option>
@@ -159,23 +159,23 @@
                   <span>Type</span>
                   <input id="type" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>Attribute</span>
                   <input id="attribute" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>Race/Subtype</span>
                   <input id="race" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>Level/Rank</span>
                   <input id="level" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field pendulum-field hidden">
                   <span>Pendulum Scale</span>
                   <input id="pendulumScale" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>Link Rating</span>
                   <input id="linkRating" type="text" />
                 </label>
@@ -183,11 +183,11 @@
                   <span>Official ID</span>
                   <input id="officialId" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>ATK</span>
                   <input id="atk" type="text" />
                 </label>
-                <label class="field">
+                <label class="field monster-field">
                   <span>DEF</span>
                   <input id="def" type="text" />
                 </label>
@@ -199,7 +199,7 @@
                   <span>Tags</span>
                   <input id="tags" type="text" placeholder="Comma separated" />
                 </label>
-                <div class="field span-2">
+                <div class="field span-2 monster-field">
                   <span>Monster Abilities</span>
                   <div class="chip-checkbox-grid" id="monsterAbilities">
                     <label><input type="checkbox" value="Tuner" /> Tuner</label>
@@ -212,7 +212,7 @@
                     <label><input type="checkbox" value="Ritual" /> Ritual</label>
                   </div>
                 </div>
-                <div class="field span-2">
+                <div class="field span-2 monster-field">
                   <span>Link Arrows</span>
                   <div class="link-arrow-grid" id="linkArrows">
                     <label class="arrow-top-left"><input type="checkbox" value="Top-Left" /> NW</label>
@@ -226,6 +226,10 @@
                     <label class="arrow-bottom-right"><input type="checkbox" value="Bottom-Right" /> SE</label>
                   </div>
                 </div>
+                <label class="field span-2 monster-field pendulum-field hidden">
+                  <span>Pendulum Effect</span>
+                  <textarea id="pendulumEffect"></textarea>
+                </label>
                 <label class="field span-2">
                   <span>Effect Text</span>
                   <textarea id="text"></textarea>
