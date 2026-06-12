@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Database Editor</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="database-editor.js?v=5" defer></script>
+  <script src="database-editor.js?v=6" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -131,6 +131,27 @@
                   <input id="statusField" type="text" placeholder="Draft, Testing, Released..." />
                 </label>
                 <label class="field">
+                  <span>Card Class</span>
+                  <select id="cardKind">
+                    <option value="monster">Monster</option>
+                    <option value="spell">Spell</option>
+                    <option value="trap">Trap</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Spell/Trap Property</span>
+                  <select id="spellTrapProperty">
+                    <option value="">None</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Quick-Play">Quick-Play</option>
+                    <option value="Continuous">Continuous</option>
+                    <option value="Equip">Equip</option>
+                    <option value="Field">Field</option>
+                    <option value="Ritual">Ritual</option>
+                    <option value="Counter">Counter</option>
+                  </select>
+                </label>
+                <label class="field">
                   <span>Card Name</span>
                   <input id="name" type="text" />
                 </label>
@@ -149,6 +170,14 @@
                 <label class="field">
                   <span>Level/Rank</span>
                   <input id="level" type="text" />
+                </label>
+                <label class="field">
+                  <span>Pendulum Scale</span>
+                  <input id="pendulumScale" type="text" />
+                </label>
+                <label class="field">
+                  <span>Link Rating</span>
+                  <input id="linkRating" type="text" />
                 </label>
                 <label class="field">
                   <span>Official ID</span>
@@ -170,6 +199,33 @@
                   <span>Tags</span>
                   <input id="tags" type="text" placeholder="Comma separated" />
                 </label>
+                <div class="field span-2">
+                  <span>Monster Abilities</span>
+                  <div class="chip-checkbox-grid" id="monsterAbilities">
+                    <label><input type="checkbox" value="Tuner" /> Tuner</label>
+                    <label><input type="checkbox" value="Flip" /> Flip</label>
+                    <label><input type="checkbox" value="Toon" /> Toon</label>
+                    <label><input type="checkbox" value="Spirit" /> Spirit</label>
+                    <label><input type="checkbox" value="Gemini" /> Gemini</label>
+                    <label><input type="checkbox" value="Union" /> Union</label>
+                    <label><input type="checkbox" value="Pendulum" /> Pendulum</label>
+                    <label><input type="checkbox" value="Ritual" /> Ritual</label>
+                  </div>
+                </div>
+                <div class="field span-2">
+                  <span>Link Arrows</span>
+                  <div class="link-arrow-grid" id="linkArrows">
+                    <label class="arrow-top-left"><input type="checkbox" value="Top-Left" /> NW</label>
+                    <label class="arrow-top"><input type="checkbox" value="Top" /> N</label>
+                    <label class="arrow-top-right"><input type="checkbox" value="Top-Right" /> NE</label>
+                    <label class="arrow-left"><input type="checkbox" value="Left" /> W</label>
+                    <span class="arrow-center">LINK</span>
+                    <label class="arrow-right"><input type="checkbox" value="Right" /> E</label>
+                    <label class="arrow-bottom-left"><input type="checkbox" value="Bottom-Left" /> SW</label>
+                    <label class="arrow-bottom"><input type="checkbox" value="Bottom" /> S</label>
+                    <label class="arrow-bottom-right"><input type="checkbox" value="Bottom-Right" /> SE</label>
+                  </div>
+                </div>
                 <label class="field span-2">
                   <span>Effect Text</span>
                   <textarea id="text"></textarea>

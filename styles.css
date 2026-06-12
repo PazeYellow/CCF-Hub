@@ -1151,6 +1151,52 @@ h3 {
   font-weight: 850;
 }
 
+.chip-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.chip-checkbox-grid label,
+.link-arrow-grid label,
+.arrow-center {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.chip-checkbox-grid label:has(input:checked),
+.link-arrow-grid label:has(input:checked) {
+  border-color: var(--gold);
+  color: var(--text);
+  background: color-mix(in srgb, var(--gold) 14%, var(--surface));
+}
+
+.chip-checkbox-grid input,
+.link-arrow-grid input {
+  accent-color: var(--gold);
+}
+
+.link-arrow-grid {
+  width: min(320px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.arrow-center {
+  color: var(--aqua);
+}
+
 .notice {
   border-left: 4px solid var(--gold);
   border-radius: var(--radius);

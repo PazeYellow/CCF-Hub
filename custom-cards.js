@@ -16,29 +16,54 @@
   }
 
   function normaliseTags(tags) {
-    if (Array.isArray(tags)) return tags.map(String).filter(Boolean);
-    if (typeof tags === "string") {
-      return tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+    return normaliseList(tags);
+  }
+
+  function normaliseList(value) {
+    if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
+    if (typeof value === "string") {
+      return value.split(",").map((item) => item.trim()).filter(Boolean);
     }
     return [];
   }
 
+  function normaliseCardKind(card) {
+    const value = String(card.cardKind || card.card_kind || card.frameType || card.frame_type || card.type || "").toLowerCase();
+    if (value.includes("spell")) return "spell";
+    if (value.includes("trap")) return "trap";
+    return "monster";
+  }
+
+  function valueText(value) {
+    return value === undefined || value === null ? "" : String(value);
+  }
+
   function normaliseCard(card, index) {
     card = card || {};
+    const cardKind = normaliseCardKind(card);
+    const spellTrapProperty = card.spellTrapProperty || card.spell_trap_property || (cardKind === "spell" || cardKind === "trap" ? card.race : "");
     return {
       cardIndex: index,
       id: String(card.id || card.name || `card-${index}`),
+      source: String(card.source || "custom"),
+      officialId: String(card.officialId || card.official_id || ""),
+      cardKind,
+      spellTrapProperty: String(spellTrapProperty || ""),
       name: String(card.name || "Unnamed Card"),
       type: String(card.type || card.cardType || "Card"),
       attribute: String(card.attribute || ""),
-      race: String(card.race || card.subtype || ""),
-      level: String(card.level || card.rank || card.linkRating || ""),
-      atk: String(card.atk || ""),
-      def: String(card.def || ""),
+      race: cardKind === "monster" ? String(card.race || card.subtype || "") : "",
+      level: valueText(card.level ?? card.rank ?? card.linkRating ?? ""),
+      pendulumScale: valueText(card.pendulumScale ?? card.pendulum_scale ?? card.scale ?? ""),
+      linkRating: valueText(card.linkRating ?? card.link_rating ?? card.linkval ?? ""),
+      atk: valueText(card.atk ?? ""),
+      def: valueText(card.def ?? ""),
       status: String(card.status || card.releaseStatus || "Released"),
       text: String(card.text || card.effect || card.description || ""),
       image: String(card.image || card.imageUrl || card.img || ""),
       tags: normaliseTags(card.tags),
+      monsterAbilities: normaliseList(card.monsterAbilities || card.monster_abilities),
+      linkArrows: normaliseList(card.linkArrows || card.link_arrows || card.linkmarkers),
       updatedAt: String(card.updatedAt || "")
     };
   }
@@ -54,9 +79,13 @@
     const haystack = [
       card.name,
       card.type,
+      card.cardKind,
+      card.spellTrapProperty,
       card.attribute,
       card.race,
       card.status,
+      card.monsterAbilities.join(" "),
+      card.linkArrows.join(" "),
       card.text,
       card.tags.join(" ")
     ].join(" ").toLowerCase();
@@ -151,6 +180,8 @@
     const pills = document.createElement("div");
     pills.className = "pill-row";
     pills.appendChild(pill(card.type, "gold"));
+    if (card.spellTrapProperty) pills.appendChild(pill(card.spellTrapProperty, "aqua"));
+    if (card.monsterAbilities.length) pills.appendChild(pill(card.monsterAbilities.join(" / "), "aqua"));
     if (card.status) pills.appendChild(pill(card.status, "aqua"));
 
     body.append(name, pills, text);
@@ -199,6 +230,8 @@
     pills.className = "pill-row";
     pills.appendChild(pill(card.type, "gold"));
     if (card.attribute) pills.appendChild(pill(card.attribute, "aqua"));
+    if (card.spellTrapProperty) pills.appendChild(pill(card.spellTrapProperty, "aqua"));
+    if (card.monsterAbilities.length) pills.appendChild(pill(card.monsterAbilities.join(" / "), "aqua"));
     if (card.status) pills.appendChild(pill(card.status, "rose"));
 
     const effect = document.createElement("p");
@@ -209,8 +242,13 @@
     [
       ["Race", card.race],
       ["Level", card.level],
+      ["Pendulum Scale", card.pendulumScale],
+      ["Link Rating", card.linkRating],
+      ["Link Arrows", card.linkArrows.join(", ")],
       ["ATK", card.atk],
       ["DEF", card.def],
+      ["Source", card.source],
+      ["Official ID", card.officialId],
       ["Tags", card.tags.join(", ")]
     ].forEach(([label, value]) => {
       if (!value) return;

@@ -9,8 +9,9 @@
   };
 
   const fields = [
-    "source", "officialId", "name", "type", "attribute", "race", "level",
-    "statusField", "atk", "def", "image", "tags", "text"
+    "source", "officialId", "cardKind", "spellTrapProperty", "name", "type",
+    "attribute", "race", "level", "pendulumScale", "linkRating", "statusField",
+    "atk", "def", "image", "tags", "text"
   ];
   const dom = {};
 
@@ -21,7 +22,7 @@
       "statusFilter", "sourceFilter", "cardList", "editorStatus", "selectedIndexMeta", "cardCount",
       "dirtyState", "officialCardSearch", "officialCardResults", "newCard", "duplicateCard",
       "saveLocal", "deleteCard", "editorMessage", "imagePreview", "previewName", "previewPills",
-      "previewText"
+      "previewText", "monsterAbilities", "linkArrows"
     ].concat(fields).forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -48,6 +49,8 @@
       dom[field].addEventListener("input", renderPreviewFromForm);
       dom[field].addEventListener("change", renderPreviewFromForm);
     });
+    getChecks("monsterAbilities").forEach((input) => input.addEventListener("change", renderPreviewFromForm));
+    getChecks("linkArrows").forEach((input) => input.addEventListener("change", renderPreviewFromForm));
   }
 
   async function boot() {
@@ -185,9 +188,13 @@
     return [
       card.name,
       card.type,
+      card.cardKind,
+      card.spellTrapProperty,
       card.attribute,
       card.race,
       card.status,
+      card.monsterAbilities.join(" "),
+      card.linkArrows.join(" "),
       card.text,
       card.tags.join(" ")
     ].join(" ").toLowerCase().includes(query);
@@ -198,6 +205,7 @@
     const card = normaliseCard({
       id: `card-${Date.now()}`,
       source: "custom",
+      cardKind: "monster",
       name: "New Draft Card",
       type: "Monster",
       status: "Draft",
@@ -286,7 +294,10 @@
       fields.forEach((field) => {
         dom[field].value = field === "source" ? "custom" : "";
       });
+      dom.cardKind.value = "monster";
       dom.statusField.value = "Draft";
+      setChecks("monsterAbilities", []);
+      setChecks("linkArrows", []);
       dom.editorStatus.textContent = "No card selected";
       dom.selectedIndexMeta.textContent = "-";
       renderPreview(null);
@@ -297,6 +308,8 @@
       const key = field === "statusField" ? "status" : field;
       dom[field].value = key === "tags" ? card.tags.join(", ") : card[key] || "";
     });
+    setChecks("monsterAbilities", card.monsterAbilities);
+    setChecks("linkArrows", card.linkArrows);
 
     dom.editorStatus.textContent = card.name;
     dom.selectedIndexMeta.textContent = `Card ${state.selectedIndex + 1}`;
@@ -310,16 +323,22 @@
       id: current.id || `card-${Date.now()}`,
       source: dom.source.value,
       officialId: dom.officialId.value.trim(),
+      cardKind: dom.cardKind.value,
+      spellTrapProperty: dom.spellTrapProperty.value,
       name: dom.name.value.trim() || "Unnamed Card",
       type: dom.type.value.trim() || "Monster",
       attribute: dom.attribute.value.trim(),
       race: dom.race.value.trim(),
       level: dom.level.value.trim(),
+      pendulumScale: dom.pendulumScale.value.trim(),
+      linkRating: dom.linkRating.value.trim(),
       status: dom.statusField.value.trim() || "Draft",
       atk: dom.atk.value.trim(),
       def: dom.def.value.trim(),
       image: dom.image.value.trim(),
       tags: dom.tags.value.split(",").map((tag) => tag.trim()).filter(Boolean),
+      monsterAbilities: readChecks("monsterAbilities"),
+      linkArrows: readChecks("linkArrows"),
       text: dom.text.value.trim()
     });
   }
@@ -352,9 +371,15 @@
     if (!card) return;
     [
       [card.source, "aqua"],
+      [card.cardKind, ""],
       [card.type, "gold"],
+      [card.spellTrapProperty, "aqua"],
       [card.status, "rose"],
-      [card.attribute, ""]
+      [card.attribute, ""],
+      [card.monsterAbilities.join(" / "), ""],
+      [card.linkRating ? `LINK-${card.linkRating}` : "", ""],
+      [card.linkArrows.length ? `Arrows: ${card.linkArrows.join(", ")}` : "", ""],
+      [card.pendulumScale ? `Scale ${card.pendulumScale}` : "", ""]
     ].forEach(([text, className]) => {
       if (!text) return;
       const pill = document.createElement("span");
@@ -413,9 +438,21 @@
       id: `card-${Date.now()}`,
       source: "official",
       officialId: card.officialId,
+      cardKind: card.cardKind,
+      spellTrapProperty: card.spellTrapProperty,
       name: card.name,
       type: card.type,
+      attribute: card.attribute,
+      race: card.race,
+      level: card.level,
+      pendulumScale: card.pendulumScale,
+      linkRating: card.linkRating,
+      atk: card.atk,
+      def: card.def,
       image: card.image,
+      text: card.text,
+      monsterAbilities: card.monsterAbilities,
+      linkArrows: card.linkArrows,
       status: "Draft",
       tags: ["Official"]
     });
@@ -429,29 +466,73 @@
   }
 
   function normaliseCard(card) {
+    const cardKind = normaliseCardKind(card.cardKind || card.card_kind || card.frameType || card.frame_type || card.type);
+    const spellTrapProperty = card.spellTrapProperty || card.spell_trap_property || (cardKind === "spell" || cardKind === "trap" ? card.race : "");
     return {
       id: String(card.id || `card-${Date.now()}`),
       source: String(card.source || "custom"),
       officialId: String(card.officialId || card.official_id || ""),
+      cardKind,
+      spellTrapProperty: String(spellTrapProperty || ""),
       name: String(card.name || "Unnamed Card"),
       type: String(card.type || card.cardType || "Card"),
       attribute: String(card.attribute || ""),
-      race: String(card.race || card.subtype || ""),
-      level: String(card.level || card.rank || card.linkRating || ""),
+      race: cardKind === "monster" ? String(card.race || card.subtype || "") : "",
+      level: valueText(card.level ?? card.rank ?? card.linkRating ?? ""),
+      pendulumScale: valueText(card.pendulumScale ?? card.pendulum_scale ?? card.scale ?? ""),
+      linkRating: valueText(card.linkRating ?? card.link_rating ?? card.linkval ?? ""),
       status: String(card.status || card.releaseStatus || "Released"),
-      atk: String(card.atk || ""),
-      def: String(card.def || ""),
+      atk: valueText(card.atk ?? ""),
+      def: valueText(card.def ?? ""),
       image: String(card.image || card.imageUrl || card.img || ""),
       tags: normaliseTags(card.tags),
+      monsterAbilities: normaliseList(card.monsterAbilities || card.monster_abilities || inferAbilities(card.type)),
+      linkArrows: normaliseList(card.linkArrows || card.link_arrows || card.linkmarkers),
       text: String(card.text || card.effect || card.description || ""),
       updatedAt: String(card.updatedAt || "")
     };
   }
 
   function normaliseTags(tags) {
-    if (Array.isArray(tags)) return tags.map(String).filter(Boolean);
-    if (typeof tags === "string") return tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+    return normaliseList(tags);
+  }
+
+  function normaliseList(value) {
+    if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
+    if (typeof value === "string") return value.split(",").map((item) => item.trim()).filter(Boolean);
     return [];
+  }
+
+  function valueText(value) {
+    return value === undefined || value === null ? "" : String(value);
+  }
+
+  function normaliseCardKind(value) {
+    const text = String(value || "").toLowerCase();
+    if (text.includes("spell")) return "spell";
+    if (text.includes("trap")) return "trap";
+    return "monster";
+  }
+
+  function inferAbilities(type) {
+    const text = String(type || "");
+    return ["Tuner", "Flip", "Toon", "Spirit", "Gemini", "Union", "Pendulum", "Ritual"]
+      .filter((ability) => text.toLowerCase().includes(ability.toLowerCase()));
+  }
+
+  function getChecks(groupId) {
+    return Array.from(dom[groupId].querySelectorAll('input[type="checkbox"]'));
+  }
+
+  function readChecks(groupId) {
+    return getChecks(groupId).filter((input) => input.checked).map((input) => input.value);
+  }
+
+  function setChecks(groupId, values) {
+    const selected = new Set(normaliseList(values));
+    getChecks(groupId).forEach((input) => {
+      input.checked = selected.has(input.value);
+    });
   }
 
   function markDirty() {
