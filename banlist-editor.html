@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Banlist Editor</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=4" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
-  <script src="api-client.js?v=3" defer></script>
-  <script src="banlist-editor.js?v=3" defer></script>
+  <script src="api-client.js?v=4" defer></script>
+  <script src="banlist-editor.js?v=4" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -138,6 +138,7 @@
 
       <div class="admin-tabs" role="tablist" aria-label="Admin views">
         <button class="status-tab active" type="button" data-admin-tab="banlist">Banlist</button>
+        <button class="status-tab" type="button" data-admin-tab="chat">Chat</button>
         <button class="status-tab" type="button" data-admin-tab="requests">Requests</button>
         <button class="status-tab owner-only" type="button" data-admin-tab="accounts">Accounts</button>
       </div>
@@ -229,6 +230,23 @@
             <button id="refreshRequests" type="button">Refresh</button>
           </div>
           <div id="requestList" class="admin-list"></div>
+        </div>
+      </section>
+
+      <section id="chatView" class="admin-view hidden">
+        <div class="tool-surface editor-panel chat-panel">
+          <div class="result-meta">
+            <span>Staff chat</span>
+            <button id="refreshChat" type="button">Refresh</button>
+          </div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="chat-composer">
+            <label class="field">
+              <span>Message</span>
+              <textarea id="chatInput" placeholder="Write to admins and owners..."></textarea>
+            </label>
+            <button id="sendChatButton" class="primary" type="button">Send</button>
+          </div>
         </div>
       </section>
 

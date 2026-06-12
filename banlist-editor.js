@@ -12,6 +12,7 @@
     selectedStatus: "forbidden",
     selectedIndex: -1,
     requests: [],
+    chatMessages: [],
     users: [],
     officialSearchTimer: null
   };
@@ -28,7 +29,8 @@
       "officialCardSearch", "officialCardResults", "cardSource", "officialId", "cardName",
       "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
-      "refreshRequests", "userList", "refreshUsers"
+      "refreshRequests", "chatMessages", "chatInput", "sendChatButton", "refreshChat",
+      "userList", "refreshUsers"
     ].forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -61,6 +63,14 @@
     dom.deleteBanCard.addEventListener("click", deleteDirectly);
     dom.submitBanRequest.addEventListener("click", submitRequest);
     dom.refreshRequests.addEventListener("click", loadRequests);
+    dom.refreshChat.addEventListener("click", loadChat);
+    dom.sendChatButton.addEventListener("click", sendChatMessage);
+    dom.chatInput.addEventListener("keydown", function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    });
     dom.refreshUsers.addEventListener("click", loadUsers);
 
     document.querySelectorAll("[data-admin-tab]").forEach((button) => {
@@ -163,6 +173,7 @@
     showLoggedIn();
     await loadBanlist();
     await loadRequests();
+    await loadChat();
     if (isOwner()) await loadUsers();
   }
 
@@ -180,6 +191,37 @@
       renderRequests();
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function loadChat() {
+    try {
+      const data = await window.CCF_API.request("/api/admin/chat?limit=80");
+      state.chatMessages = data.messages || [];
+      renderChat();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function sendChatMessage() {
+    const message = dom.chatInput.value.trim();
+    if (!message) return;
+
+    dom.sendChatButton.disabled = true;
+    try {
+      const data = await window.CCF_API.request("/api/admin/chat", {
+        method: "POST",
+        body: { message }
+      });
+      state.chatMessages.push(data.message);
+      state.chatMessages = state.chatMessages.slice(-80);
+      dom.chatInput.value = "";
+      renderChat();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    } finally {
+      dom.sendChatButton.disabled = false;
     }
   }
 
@@ -236,6 +278,10 @@
     });
     document.querySelectorAll(".admin-view").forEach((view) => view.classList.add("hidden"));
     document.getElementById(`${tab}View`).classList.remove("hidden");
+
+    if (tab === "chat") {
+      loadChat();
+    }
   }
 
   function renderBanlist() {
@@ -347,6 +393,37 @@
       item.appendChild(actions);
       dom.userList.appendChild(item);
     });
+  }
+
+  function renderChat() {
+    dom.chatMessages.innerHTML = "";
+
+    if (!state.chatMessages.length) {
+      dom.chatMessages.innerHTML = '<div class="empty-state">No staff messages yet.</div>';
+      return;
+    }
+
+    state.chatMessages.forEach((message) => {
+      const item = document.createElement("article");
+      item.className = "chat-message";
+      const author = message.author || {};
+      const displayName = author.displayName || author.email || "Staff";
+      const color = author.profileColor || "#45d5c6";
+      const avatarUrl = author.avatarUrl || "";
+      item.innerHTML = `
+        <span class="profile-avatar small" style="background-color: ${escapeHtml(color)}; ${avatarUrl ? `background-image: url('${escapeHtml(avatarUrl)}')` : ""}">${avatarUrl ? "" : escapeHtml(initials(displayName))}</span>
+        <div>
+          <div class="chat-message-meta">
+            <strong>${escapeHtml(displayName)}</strong>
+            <span>${formatDate(message.createdAt)}</span>
+          </div>
+          <p>${escapeHtml(message.message)}</p>
+        </div>
+      `;
+      dom.chatMessages.appendChild(item);
+    });
+
+    dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
   }
 
   function userButton(label, action) {
@@ -606,5 +683,16 @@
       .slice(0, 2)
       .map((part) => part[0].toUpperCase())
       .join("") || "CCF";
+  }
+
+  function formatDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 })();
