@@ -1175,7 +1175,8 @@ h3 {
   gap: 10px;
 }
 
-.schedule-item .action-row {
+.schedule-item .action-row,
+.request-item .action-row {
   grid-column: 1 / -1;
   justify-content: flex-end;
 }
@@ -1535,11 +1536,13 @@ h3 {
     flex: 1 1 150px;
   }
 
-  .schedule-item .action-row {
+  .schedule-item .action-row,
+  .request-item .action-row {
     justify-content: stretch;
   }
 
-  .schedule-item .action-row button {
+  .schedule-item .action-row button,
+  .request-item .action-row button {
     flex: 1 1 130px;
   }
 

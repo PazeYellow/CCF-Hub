@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Database Editor</title>
   <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
   <script src="site.js" defer></script>
   <script>document.write('<script src="api-config.js?v=' + Date.now() + '"><\/script>');</script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="database-editor.js?v=12" defer></script>
+  <script src="database-editor.js?v=13" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -87,6 +87,14 @@
           <button id="scheduleDatabasePublish" class="primary" type="button">Schedule</button>
         </div>
         <div id="databaseScheduleList" class="admin-list compact-list"></div>
+      </section>
+
+      <section class="tool-surface editor-panel schedule-panel">
+        <div class="result-meta">
+          <span>Database Requests</span>
+          <button id="refreshDatabaseRequests" type="button">Refresh</button>
+        </div>
+        <div id="databaseRequestList" class="admin-list compact-list"></div>
       </section>
 
       <div class="editor-layout">
@@ -261,10 +269,15 @@
             </aside>
           </div>
 
+          <label class="field admin-only">
+            <span>Request Note</span>
+            <textarea id="databaseRequestNote"></textarea>
+          </label>
           <div class="action-row">
             <button id="newCard" type="button">New</button>
             <button id="duplicateCard" type="button">Duplicate</button>
             <button id="saveLocal" type="button">Save Draft</button>
+            <button id="submitDatabaseRequest" type="button">Submit Request</button>
             <button id="deleteCard" type="button">Delete</button>
           </div>
           <div id="editorMessage" class="notice hidden"></div>

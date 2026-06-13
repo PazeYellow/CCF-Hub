@@ -5,6 +5,7 @@
     cards: [],
     selectedIndex: -1,
     dirty: false,
+    databaseRequests: [],
     databaseSchedules: [],
     officialSearchTimer: null
   };
@@ -24,7 +25,8 @@
       "dirtyState", "officialCardSearch", "officialCardResults", "newCard", "duplicateCard",
       "saveLocal", "deleteCard", "editorMessage", "imagePreview", "previewName", "previewPills",
       "previewText", "monsterAbilities", "linkArrows", "databaseScheduleAt", "scheduleDatabasePublish",
-      "refreshDatabaseSchedules", "databaseScheduleList"
+      "refreshDatabaseSchedules", "databaseScheduleList", "refreshDatabaseRequests", "databaseRequestList",
+      "databaseRequestNote", "submitDatabaseRequest"
     ].concat(fields).forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -48,6 +50,14 @@
     dom.deleteCard.addEventListener("click", deleteCard);
     dom.scheduleDatabasePublish.addEventListener("click", scheduleDatabasePublish);
     dom.refreshDatabaseSchedules.addEventListener("click", loadDatabaseSchedules);
+    dom.refreshDatabaseRequests.addEventListener("click", loadDatabaseRequests);
+    dom.submitDatabaseRequest.addEventListener("click", submitDatabaseRequest);
+    dom.databaseRequestNote.addEventListener("keydown", function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        submitDatabaseRequest();
+      }
+    });
 
     fields.forEach((field) => {
       dom[field].addEventListener("input", renderPreviewFromForm);
@@ -75,6 +85,7 @@
       state.user = await window.CCF_API.me();
       showLoggedIn();
       await loadDatabase();
+      await loadDatabaseRequests();
       if (isOwner()) await loadDatabaseSchedules();
     } catch (error) {
       window.CCF_API.setToken("");
@@ -89,6 +100,7 @@
       dom.loginPassword.value = "";
       showLoggedIn();
       await loadDatabase();
+      await loadDatabaseRequests();
       if (isOwner()) await loadDatabaseSchedules();
     } catch (error) {
       setNotice(dom.authMessage, error.message, true);
@@ -125,8 +137,11 @@
     document.querySelectorAll(".owner-only").forEach((element) => {
       element.classList.toggle("hidden", !owner);
     });
+    document.querySelectorAll(".admin-only").forEach((element) => {
+      element.classList.toggle("hidden", owner);
+    });
     if (!owner) {
-      setNotice(dom.editorMessage, "Admins can review and draft locally here. Owners publish database changes.");
+      setNotice(dom.editorMessage, "Admins can draft cards and send database addition requests for owners to approve.");
     }
   }
 
@@ -207,6 +222,57 @@
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
+  }
+
+  async function loadDatabaseRequests() {
+    try {
+      const data = await window.CCF_API.request("/api/admin/database/requests");
+      state.databaseRequests = data.requests || [];
+      renderDatabaseRequests();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  function renderDatabaseRequests() {
+    dom.databaseRequestList.innerHTML = "";
+
+    if (!state.databaseRequests.length) {
+      dom.databaseRequestList.innerHTML = '<div class="empty-state">No database requests yet.</div>';
+      return;
+    }
+
+    state.databaseRequests.forEach((request) => {
+      dom.databaseRequestList.appendChild(databaseRequestItem(request));
+    });
+  }
+
+  function databaseRequestItem(request) {
+    const card = request.card || {};
+    const requester = request.requesterName || request.requesterEmail || "Admin";
+    const item = document.createElement("article");
+    item.className = "admin-list-item request-item";
+    item.innerHTML = `
+      <div>
+        <strong>${escapeHtml(card.name || "Unnamed Card")}</strong>
+        <p>${escapeHtml(card.type || card.cardKind || "Card")} / ${escapeHtml(card.status || "Draft")} / ${escapeHtml(requester)}</p>
+        ${request.note ? `<p>${escapeHtml(request.note)}</p>` : ""}
+        <p>${escapeHtml(formatFullDate(request.createdAt))}</p>
+      </div>
+      <span class="pill ${request.status === "pending" ? "gold" : request.status === "approved" ? "aqua" : "rose"}">${escapeHtml(request.status)}</span>
+    `;
+
+    if (isOwner() && request.status === "pending") {
+      const actions = document.createElement("div");
+      actions.className = "action-row";
+      actions.append(
+        smallButton("Approve", () => reviewDatabaseRequest(request.id, "approve")),
+        smallButton("Reject", () => reviewDatabaseRequest(request.id, "reject"))
+      );
+      item.appendChild(actions);
+    }
+
+    return item;
   }
 
   function renderDatabaseSchedules() {
@@ -428,6 +494,48 @@
       if (action === "publish-now") await loadDatabase();
       await loadDatabaseSchedules();
       setNotice(dom.editorMessage, action === "cancel" ? "Scheduled publish cancelled." : "Scheduled publish applied.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function submitDatabaseRequest() {
+    if (isOwner()) return;
+    if (state.selectedIndex < 0) {
+      setNotice(dom.editorMessage, "Create or select a card first.", true);
+      return;
+    }
+
+    saveDraft(false);
+    const card = state.cards[state.selectedIndex];
+
+    try {
+      await window.CCF_API.request("/api/admin/database/requests", {
+        method: "POST",
+        body: {
+          card,
+          note: dom.databaseRequestNote.value
+        }
+      });
+      dom.databaseRequestNote.value = "";
+      await loadDatabaseRequests();
+      setNotice(dom.editorMessage, "Database request sent to the owners.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function reviewDatabaseRequest(id, decision) {
+    if (!isOwner()) return;
+
+    try {
+      await window.CCF_API.request(`/api/admin/database/requests/${id}/${decision}`, {
+        method: "POST",
+        body: {}
+      });
+      if (decision === "approve") await loadDatabase();
+      await loadDatabaseRequests();
+      setNotice(dom.editorMessage, decision === "approve" ? "Database request approved." : "Database request rejected.");
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
