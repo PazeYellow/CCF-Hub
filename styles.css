@@ -720,6 +720,84 @@ h3 {
   min-height: 142px;
 }
 
+.banlist-editor-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+  align-items: start;
+}
+
+.banlist-editor-board {
+  min-width: 0;
+}
+
+.banlist-editor-toolbar {
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px);
+  margin-top: 12px;
+}
+
+.ban-editor-card-grid {
+  margin-top: 12px;
+}
+
+.ban-editor-card {
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, opacity 0.16s ease;
+}
+
+.ban-editor-card:hover,
+.ban-editor-card.active,
+.ban-editor-card.selected {
+  border-color: var(--gold);
+}
+
+.ban-editor-card.active {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 38%, transparent);
+}
+
+.ban-editor-card.selected {
+  background: color-mix(in srgb, var(--gold) 9%, var(--surface));
+}
+
+.ban-editor-card.drag-source {
+  opacity: 0.48;
+}
+
+.ban-editor-card.drag-over {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px var(--aqua);
+}
+
+.ban-card-select {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  display: grid;
+  place-items: center;
+}
+
+.ban-card-select input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--gold);
+}
+
+.ban-card-order {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.ban-editor-inspector .ban-edit-grid {
+  grid-template-columns: 1fr;
+}
+
 .ban-badge {
   align-self: start;
   width: fit-content;
@@ -1346,6 +1424,7 @@ h3 {
   .database-layout,
   .editor-layout,
   .database-editor-grid,
+  .banlist-editor-shell,
   .ban-edit-grid {
     grid-template-columns: 1fr;
   }
@@ -1362,6 +1441,10 @@ h3 {
 
   .toolbar {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .banlist-editor-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .admin-session,

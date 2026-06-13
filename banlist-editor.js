@@ -12,6 +12,7 @@
     selectedStatus: "forbidden",
     selectedIndex: -1,
     selectedOrderIndexes: new Set(),
+    dragIndex: -1,
     orderDirty: false,
     requests: [],
     chatMessages: [],
@@ -30,7 +31,7 @@
       "banSearch", "banStatusFilter", "banCardList", "banEditorStatus", "banEditorCount",
       "moveBanCardUp", "moveBanCardDown", "sortSelectedBanCards", "clearBanSelection", "saveBanOrder",
       "banSelectionCount", "banOrderState", "banFormArt", "banFormBadge", "banFormName", "banFormType",
-      "banPreviewTitle", "banPreviewCount", "banVisualPreview",
+      "banPreviewTitle", "banPreviewCount",
       "officialCardSearch", "officialCardResults", "cardSource", "officialId", "cardName",
       "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
@@ -339,8 +340,9 @@
     pruneSelectedIndexes(cards.length);
     dom.banCardList.innerHTML = "";
     dom.banEditorCount.textContent = `${filtered.length} of ${cards.length} cards`;
+    dom.banPreviewCount.textContent = `${cards.length} cards`;
+    dom.banPreviewTitle.textContent = STATUS_LABELS[status];
     renderOrderState(cards.length);
-    renderVisualPreview(status, cards);
     renderFormPreview();
 
     if (!filtered.length) {
@@ -350,45 +352,156 @@
 
     filtered.forEach(({ card, index }) => {
       const item = document.createElement("article");
-      item.className = "visual-ban-row";
+      item.className = "ban-card ban-editor-card";
       item.classList.toggle("active", state.selectedStatus === status && state.selectedIndex === index);
       item.classList.toggle("selected", state.selectedOrderIndexes.has(index));
+      item.classList.toggle("drag-source", state.dragIndex === index);
+      item.draggable = isOwner();
+      item.setAttribute("role", "button");
+      item.setAttribute("tabindex", "0");
+      item.setAttribute("aria-label", `Edit ${card.name}`);
+      item.setAttribute("data-index", String(index));
 
       const picker = document.createElement("label");
-      picker.className = "ban-row-picker";
+      picker.className = "ban-card-select";
+      picker.title = "Select for sorting";
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = state.selectedOrderIndexes.has(index);
-      checkbox.addEventListener("change", function () {
+      checkbox.addEventListener("click", (event) => event.stopPropagation());
+      checkbox.addEventListener("change", function (event) {
+        event.stopPropagation();
         toggleOrderSelection(index);
       });
       picker.appendChild(checkbox);
 
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "ban-row-card";
-
-      const art = document.createElement("span");
-      art.className = "official-card-thumb";
+      const art = document.createElement("div");
+      art.className = "card-art";
       buildImage(card.image, card.name, art);
 
-      const body = document.createElement("span");
-      body.innerHTML = `
-        <strong>${escapeHtml(card.name)}</strong>
-        <small>${escapeHtml(card.type || "Card")}</small>
-        <small>#${index + 1}</small>
-      `;
+      const body = document.createElement("div");
+      body.className = "card-body";
 
-      button.append(art, body);
-      button.addEventListener("click", function () {
-        state.selectedStatus = status;
-        state.selectedIndex = index;
-        showCard(card, status);
-        renderBanlist();
+      const badge = document.createElement("span");
+      badge.className = `ban-badge ${status}`;
+      badge.textContent = STATUS_LABELS[status];
+
+      const name = document.createElement("div");
+      name.className = "card-name";
+      name.textContent = card.name;
+
+      const type = document.createElement("div");
+      type.className = "card-text";
+      type.textContent = card.type || "Card";
+
+      const meta = document.createElement("small");
+      meta.className = "ban-card-order";
+      meta.textContent = `#${index + 1}`;
+
+      body.append(badge, name, type, meta);
+      item.append(picker, art, body);
+      item.addEventListener("click", () => selectBanCard(index, status));
+      item.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectBanCard(index, status);
+        }
       });
-
-      item.append(picker, button);
+      bindCardDrag(item, index);
       dom.banCardList.appendChild(item);
+    });
+  }
+
+  function selectBanCard(index, status) {
+    const card = state.banlist[status][index];
+    state.selectedStatus = status;
+    state.selectedIndex = index;
+    showCard(card, status);
+    renderBanlist();
+  }
+
+  function bindCardDrag(item, index) {
+    item.addEventListener("dragstart", function (event) {
+      if (!isOwner()) {
+        event.preventDefault();
+        return;
+      }
+      state.dragIndex = index;
+      item.classList.add("drag-source");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", String(index));
+    });
+
+    item.addEventListener("dragover", function (event) {
+      if (!isOwner() || state.dragIndex < 0) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      item.classList.add("drag-over");
+    });
+
+    item.addEventListener("dragleave", function () {
+      item.classList.remove("drag-over");
+    });
+
+    item.addEventListener("drop", function (event) {
+      if (!isOwner()) return;
+      event.preventDefault();
+      item.classList.remove("drag-over");
+      const draggedIndex = Number(event.dataTransfer.getData("text/plain"));
+      reorderByDrag(Number.isNaN(draggedIndex) ? state.dragIndex : draggedIndex, index, event);
+    });
+
+    item.addEventListener("dragend", clearDragState);
+  }
+
+  function reorderByDrag(fromIndex, targetIndex, event) {
+    const cards = state.banlist[state.selectedStatus] || [];
+    if (fromIndex < 0 || targetIndex < 0 || fromIndex >= cards.length || targetIndex >= cards.length) {
+      clearDragState();
+      return;
+    }
+
+    const activeCard = cards[state.selectedIndex] || null;
+    const selectedRefs = Array.from(state.selectedOrderIndexes)
+      .map((index) => cards[index])
+      .filter(Boolean);
+    const movingIndexes = state.selectedOrderIndexes.has(fromIndex)
+      ? Array.from(state.selectedOrderIndexes).sort((a, b) => a - b)
+      : [fromIndex];
+    const movingCards = movingIndexes.map((index) => cards[index]).filter(Boolean);
+    const movingSet = new Set(movingIndexes);
+    if (movingSet.has(targetIndex)) {
+      clearDragState();
+      return;
+    }
+    const remainingCards = cards.filter((_, index) => !movingSet.has(index));
+    const targetCard = cards[targetIndex];
+    const rect = event.currentTarget.getBoundingClientRect();
+    const dropAfter = event.clientY > rect.top + rect.height / 2;
+    let insertIndex = remainingCards.indexOf(targetCard);
+
+    if (insertIndex < 0) insertIndex = remainingCards.length;
+    if (dropAfter) insertIndex += 1;
+
+    remainingCards.splice(insertIndex, 0, ...movingCards);
+    state.banlist[state.selectedStatus] = remainingCards;
+
+    const nextSelectedRefs = state.selectedOrderIndexes.has(fromIndex) ? movingCards : selectedRefs;
+    state.selectedOrderIndexes = new Set(
+      nextSelectedRefs.map((card) => remainingCards.indexOf(card)).filter((index) => index >= 0)
+    );
+    if (activeCard) state.selectedIndex = remainingCards.indexOf(activeCard);
+
+    clearDragState(false);
+    markOrderDirty();
+    renderBanlist();
+  }
+
+  function clearDragState(removeClasses = true) {
+    state.dragIndex = -1;
+    if (!removeClasses) return;
+    document.querySelectorAll(".ban-editor-card.drag-source, .ban-editor-card.drag-over").forEach((card) => {
+      card.classList.remove("drag-source", "drag-over");
     });
   }
 
@@ -436,46 +549,6 @@
     dom.banFormBadge.textContent = STATUS_LABELS[status] || "Banlist";
     dom.banFormName.textContent = card.name;
     dom.banFormType.textContent = card.type;
-  }
-
-  function renderVisualPreview(status, cards) {
-    dom.banPreviewTitle.textContent = `${STATUS_LABELS[status]} Preview`;
-    dom.banPreviewCount.textContent = `${cards.length} cards`;
-    dom.banVisualPreview.innerHTML = "";
-
-    if (!cards.length) {
-      dom.banVisualPreview.innerHTML = '<div class="empty-state">No cards in this section.</div>';
-      return;
-    }
-
-    cards.forEach((card, index) => {
-      const item = document.createElement("article");
-      item.className = "ban-card";
-      item.classList.toggle("selected", state.selectedOrderIndexes.has(index));
-
-      const art = document.createElement("div");
-      art.className = "card-art";
-      buildImage(card.image, card.name, art);
-
-      const body = document.createElement("div");
-      body.className = "card-body";
-
-      const badge = document.createElement("span");
-      badge.className = `ban-badge ${status}`;
-      badge.textContent = STATUS_LABELS[status];
-
-      const name = document.createElement("div");
-      name.className = "card-name";
-      name.textContent = card.name;
-
-      const type = document.createElement("div");
-      type.className = "card-text";
-      type.textContent = card.type;
-
-      body.append(badge, name, type);
-      item.append(art, body);
-      dom.banVisualPreview.appendChild(item);
-    });
   }
 
   function renderRequests() {

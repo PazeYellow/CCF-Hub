@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Banlist Editor</title>
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="banlist-editor.js?v=8" defer></script>
+  <script src="banlist-editor.js?v=9" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -148,14 +148,18 @@
       </div>
 
       <section id="banlistView" class="admin-view">
-        <div class="editor-layout">
-          <aside class="tool-surface editor-panel sticky">
-            <div class="form-grid">
-              <label class="field span-2">
+        <div class="banlist-editor-shell">
+          <section class="tool-surface editor-panel banlist-editor-board">
+            <div class="result-meta">
+              <span id="banPreviewTitle">Forbidden</span>
+              <strong id="banEditorCount">0 cards</strong>
+            </div>
+            <div class="toolbar banlist-editor-toolbar">
+              <label class="field">
                 <span>Search</span>
                 <input id="banSearch" type="search" placeholder="Card name..." autocomplete="off" />
               </label>
-              <label class="field span-2">
+              <label class="field">
                 <span>Section</span>
                 <select id="banStatusFilter">
                   <option value="forbidden">Forbidden</option>
@@ -175,13 +179,13 @@
               <span id="banSelectionCount">0 selected</span>
               <strong id="banOrderState">Saved order</strong>
             </div>
-            <div id="banCardList" class="editor-list"></div>
-          </aside>
+            <div id="banCardList" class="ban-card-grid ban-editor-card-grid"></div>
+          </section>
 
-          <section class="tool-surface editor-panel">
+          <aside class="tool-surface editor-panel sticky ban-editor-inspector">
             <div class="result-meta">
               <span id="banEditorStatus">No card selected</span>
-              <strong id="banEditorCount">0 cards</strong>
+              <strong id="banPreviewCount">0 cards</strong>
             </div>
             <div class="official-search-panel">
               <label class="field">
@@ -242,16 +246,8 @@
               <button id="submitBanRequest" type="button">Submit Request</button>
             </div>
             <div id="editorMessage" class="notice hidden"></div>
-          </section>
+          </aside>
         </div>
-
-        <section class="tool-surface editor-panel ban-live-preview">
-          <div class="result-meta">
-            <span id="banPreviewTitle">Forbidden Preview</span>
-            <strong id="banPreviewCount">0 cards</strong>
-          </div>
-          <div id="banVisualPreview" class="ban-card-grid"></div>
-        </section>
       </section>
 
       <section id="requestsView" class="admin-view hidden">
