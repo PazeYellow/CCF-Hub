@@ -11,6 +11,8 @@
     banlist: { forbidden: [], limited: [], semi_limited: [] },
     selectedStatus: "forbidden",
     selectedIndex: -1,
+    selectedOrderIndexes: new Set(),
+    orderDirty: false,
     requests: [],
     chatMessages: [],
     users: [],
@@ -21,11 +23,14 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     [
-      "authPanel", "authMessage", "adminWorkspace", "loginEmail", "loginPassword", "loginButton",
+      "authPanel", "authMessage", "adminWorkspace", "loginEmail", "loginPassword", "loginButton", "forgotPasswordButton",
       "signupName", "signupEmail", "signupPassword", "signupRole", "signupButton", "sessionMeta",
       "sessionRole", "sessionAvatar", "profileDisplayName", "profileColor", "profileAvatarUrl",
       "profileBio", "saveProfileButton", "currentPassword", "newPassword", "changePasswordButton", "logoutButton",
       "banSearch", "banStatusFilter", "banCardList", "banEditorStatus", "banEditorCount",
+      "moveBanCardUp", "moveBanCardDown", "sortSelectedBanCards", "clearBanSelection", "saveBanOrder",
+      "banSelectionCount", "banOrderState", "banFormArt", "banFormBadge", "banFormName", "banFormType",
+      "banPreviewTitle", "banPreviewCount", "banVisualPreview",
       "officialCardSearch", "officialCardResults", "cardSource", "officialId", "cardName",
       "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
@@ -41,6 +46,7 @@
 
   function bindEvents() {
     dom.loginButton.addEventListener("click", login);
+    dom.forgotPasswordButton.addEventListener("click", forgotPassword);
     dom.signupButton.addEventListener("click", signup);
     dom.logoutButton.addEventListener("click", logout);
     dom.saveProfileButton.addEventListener("click", saveProfile);
@@ -50,6 +56,7 @@
     dom.banStatusFilter.addEventListener("change", function () {
       state.selectedStatus = dom.banStatusFilter.value;
       state.selectedIndex = -1;
+      state.selectedOrderIndexes.clear();
       clearForm();
       renderBanlist();
     });
@@ -62,6 +69,11 @@
     dom.saveBanCard.addEventListener("click", saveDirectly);
     dom.deleteBanCard.addEventListener("click", deleteDirectly);
     dom.submitBanRequest.addEventListener("click", submitRequest);
+    dom.moveBanCardUp.addEventListener("click", () => moveBanCards(-1));
+    dom.moveBanCardDown.addEventListener("click", () => moveBanCards(1));
+    dom.sortSelectedBanCards.addEventListener("click", sortSelectedBanCards);
+    dom.clearBanSelection.addEventListener("click", clearBanSelection);
+    dom.saveBanOrder.addEventListener("click", saveBanOrder);
     dom.refreshRequests.addEventListener("click", loadRequests);
     dom.refreshChat.addEventListener("click", loadChat);
     dom.sendChatButton.addEventListener("click", sendChatMessage);
@@ -72,6 +84,11 @@
       }
     });
     dom.refreshUsers.addEventListener("click", loadUsers);
+
+    [dom.cardName, dom.cardType, dom.cardImage, dom.cardStatus].forEach((input) => {
+      input.addEventListener("input", renderFormPreview);
+      input.addEventListener("change", renderFormPreview);
+    });
 
     document.querySelectorAll("[data-admin-tab]").forEach((button) => {
       button.addEventListener("click", function () {
@@ -103,6 +120,29 @@
       await loadWorkspace();
     } catch (error) {
       setNotice(dom.authMessage, error.message, true);
+    }
+  }
+
+  async function forgotPassword() {
+    const email = dom.loginEmail.value.trim();
+    setNotice(dom.authMessage, "");
+
+    if (!email) {
+      setNotice(dom.authMessage, "Enter your email first, then request a reset.", true);
+      return;
+    }
+
+    dom.forgotPasswordButton.disabled = true;
+    try {
+      await window.CCF_API.request("/api/auth/forgot-password", {
+        method: "POST",
+        body: { email }
+      });
+      setNotice(dom.authMessage, "Password reset request sent to the owners.");
+    } catch (error) {
+      setNotice(dom.authMessage, error.message, true);
+    } finally {
+      dom.forgotPasswordButton.disabled = false;
     }
   }
 
@@ -180,6 +220,8 @@
   async function loadBanlist() {
     state.banlist = normaliseBanlist(await window.CCF_API.request("/api/banlist"));
     state.selectedIndex = -1;
+    state.selectedOrderIndexes.clear();
+    state.orderDirty = false;
     clearForm();
     renderBanlist();
   }
@@ -240,6 +282,8 @@
     state.user = null;
     dom.authPanel.classList.remove("hidden");
     dom.adminWorkspace.classList.add("hidden");
+    const accountsTab = document.querySelector('[data-admin-tab="accounts"]');
+    if (accountsTab) accountsTab.textContent = "Accounts";
     setNotice(dom.authMessage, message || "");
   }
 
@@ -292,8 +336,12 @@
       .map((card, index) => ({ card, index }))
       .filter((item) => item.card.name.toLowerCase().includes(query));
 
+    pruneSelectedIndexes(cards.length);
     dom.banCardList.innerHTML = "";
     dom.banEditorCount.textContent = `${filtered.length} of ${cards.length} cards`;
+    renderOrderState(cards.length);
+    renderVisualPreview(status, cards);
+    renderFormPreview();
 
     if (!filtered.length) {
       dom.banCardList.innerHTML = '<div class="empty-state">No cards found.</div>';
@@ -301,17 +349,132 @@
     }
 
     filtered.forEach(({ card, index }) => {
+      const item = document.createElement("article");
+      item.className = "visual-ban-row";
+      item.classList.toggle("active", state.selectedStatus === status && state.selectedIndex === index);
+      item.classList.toggle("selected", state.selectedOrderIndexes.has(index));
+
+      const picker = document.createElement("label");
+      picker.className = "ban-row-picker";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = state.selectedOrderIndexes.has(index);
+      checkbox.addEventListener("change", function () {
+        toggleOrderSelection(index);
+      });
+      picker.appendChild(checkbox);
+
       const button = document.createElement("button");
       button.type = "button";
-      button.className = state.selectedStatus === status && state.selectedIndex === index ? "active" : "";
-      button.textContent = card.name;
+      button.className = "ban-row-card";
+
+      const art = document.createElement("span");
+      art.className = "official-card-thumb";
+      buildImage(card.image, card.name, art);
+
+      const body = document.createElement("span");
+      body.innerHTML = `
+        <strong>${escapeHtml(card.name)}</strong>
+        <small>${escapeHtml(card.type || "Card")}</small>
+        <small>#${index + 1}</small>
+      `;
+
+      button.append(art, body);
       button.addEventListener("click", function () {
         state.selectedStatus = status;
         state.selectedIndex = index;
         showCard(card, status);
         renderBanlist();
       });
-      dom.banCardList.appendChild(button);
+
+      item.append(picker, button);
+      dom.banCardList.appendChild(item);
+    });
+  }
+
+  function buildImage(src, alt, container) {
+    container.classList.toggle("missing", !src);
+    container.innerHTML = "";
+    if (!src) return;
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = alt || "";
+    img.loading = "lazy";
+    img.onerror = function () {
+      container.classList.add("missing");
+      img.remove();
+    };
+    container.appendChild(img);
+  }
+
+  function renderOrderState(cardCount) {
+    const selectedCount = state.selectedOrderIndexes.size;
+    dom.banSelectionCount.textContent = `${selectedCount} selected`;
+    dom.banOrderState.textContent = state.orderDirty ? "Unsaved order" : "Saved order";
+    dom.banOrderState.classList.toggle("dirty-text", state.orderDirty);
+
+    const hasCards = cardCount > 0;
+    const hasSelection = selectedCount > 0 || state.selectedIndex >= 0;
+    dom.moveBanCardUp.disabled = !isOwner() || !hasCards || !hasSelection;
+    dom.moveBanCardDown.disabled = !isOwner() || !hasCards || !hasSelection;
+    dom.sortSelectedBanCards.disabled = !isOwner() || selectedCount < 2;
+    dom.clearBanSelection.disabled = selectedCount === 0;
+    dom.saveBanOrder.disabled = !isOwner() || !state.orderDirty;
+  }
+
+  function renderFormPreview() {
+    const card = {
+      name: dom.cardName.value.trim() || "No card selected",
+      type: dom.cardType.value.trim() || "Card",
+      image: dom.cardImage.value.trim()
+    };
+    const status = dom.cardStatus.value || state.selectedStatus;
+
+    buildImage(card.image, card.name, dom.banFormArt);
+    dom.banFormBadge.className = `ban-badge ${status}`;
+    dom.banFormBadge.textContent = STATUS_LABELS[status] || "Banlist";
+    dom.banFormName.textContent = card.name;
+    dom.banFormType.textContent = card.type;
+  }
+
+  function renderVisualPreview(status, cards) {
+    dom.banPreviewTitle.textContent = `${STATUS_LABELS[status]} Preview`;
+    dom.banPreviewCount.textContent = `${cards.length} cards`;
+    dom.banVisualPreview.innerHTML = "";
+
+    if (!cards.length) {
+      dom.banVisualPreview.innerHTML = '<div class="empty-state">No cards in this section.</div>';
+      return;
+    }
+
+    cards.forEach((card, index) => {
+      const item = document.createElement("article");
+      item.className = "ban-card";
+      item.classList.toggle("selected", state.selectedOrderIndexes.has(index));
+
+      const art = document.createElement("div");
+      art.className = "card-art";
+      buildImage(card.image, card.name, art);
+
+      const body = document.createElement("div");
+      body.className = "card-body";
+
+      const badge = document.createElement("span");
+      badge.className = `ban-badge ${status}`;
+      badge.textContent = STATUS_LABELS[status];
+
+      const name = document.createElement("div");
+      name.className = "card-name";
+      name.textContent = card.name;
+
+      const type = document.createElement("div");
+      type.className = "card-text";
+      type.textContent = card.type;
+
+      body.append(badge, name, type);
+      item.append(art, body);
+      dom.banVisualPreview.appendChild(item);
     });
   }
 
@@ -360,6 +523,9 @@
 
   function renderUsers() {
     dom.userList.innerHTML = "";
+    const resetCount = state.users.filter((user) => user.passwordResetRequestedAt).length;
+    const accountsTab = document.querySelector('[data-admin-tab="accounts"]');
+    if (accountsTab) accountsTab.textContent = resetCount ? `Accounts (${resetCount})` : "Accounts";
 
     if (!state.users.length) {
       dom.userList.innerHTML = '<div class="empty-state">No accounts found.</div>';
@@ -377,6 +543,7 @@
           </div>
           <p>${escapeHtml(user.email)}</p>
           ${user.bio ? `<p>${escapeHtml(user.bio)}</p>` : ""}
+          ${user.passwordResetRequestedAt ? `<p class="reset-request-text">Password reset requested ${escapeHtml(formatDate(user.passwordResetRequestedAt))}</p>` : ""}
         </div>
         <span class="pill ${user.status === "active" ? "aqua" : user.status === "pending" ? "gold" : "rose"}">${user.role} / ${user.status}</span>
       `;
@@ -386,6 +553,7 @@
       actions.append(
         userButton("Approve Admin", () => updateUser(user.id, { role: "admin", status: "active" })),
         userButton("Approve Owner", () => updateUser(user.id, { role: "owner", status: "active" })),
+        userButton("Reset Password", () => resetUserPassword(user)),
         userButton("Disable", () => updateUser(user.id, { status: "disabled" })),
         userButton("Reject", () => updateUser(user.id, { status: "rejected" }))
       );
@@ -434,6 +602,103 @@
     return button;
   }
 
+  function toggleOrderSelection(index) {
+    if (state.selectedOrderIndexes.has(index)) {
+      state.selectedOrderIndexes.delete(index);
+    } else {
+      state.selectedOrderIndexes.add(index);
+    }
+    renderBanlist();
+  }
+
+  function clearBanSelection() {
+    state.selectedOrderIndexes.clear();
+    renderBanlist();
+  }
+
+  function pruneSelectedIndexes(cardCount) {
+    state.selectedOrderIndexes = new Set(
+      Array.from(state.selectedOrderIndexes).filter((index) => index >= 0 && index < cardCount)
+    );
+  }
+
+  function actionIndexes() {
+    const selected = Array.from(state.selectedOrderIndexes).sort((a, b) => a - b);
+    if (selected.length) return selected;
+    return state.selectedIndex >= 0 ? [state.selectedIndex] : [];
+  }
+
+  function moveBanCards(direction) {
+    if (!isOwner()) return;
+    const cards = state.banlist[state.selectedStatus] || [];
+    const indexes = actionIndexes();
+
+    if (!indexes.length) {
+      setNotice(dom.editorMessage, "Select a card first.", true);
+      return;
+    }
+
+    const activeCard = cards[state.selectedIndex] || null;
+    let selected = new Set(indexes);
+
+    if (direction < 0) {
+      for (let index = 1; index < cards.length; index += 1) {
+        if (selected.has(index) && !selected.has(index - 1)) {
+          [cards[index - 1], cards[index]] = [cards[index], cards[index - 1]];
+          selected.delete(index);
+          selected.add(index - 1);
+        }
+      }
+    } else {
+      for (let index = cards.length - 2; index >= 0; index -= 1) {
+        if (selected.has(index) && !selected.has(index + 1)) {
+          [cards[index + 1], cards[index]] = [cards[index], cards[index + 1]];
+          selected.delete(index);
+          selected.add(index + 1);
+        }
+      }
+    }
+
+    state.selectedOrderIndexes = selected;
+    if (activeCard) state.selectedIndex = cards.indexOf(activeCard);
+    markOrderDirty();
+    renderBanlist();
+  }
+
+  function sortSelectedBanCards() {
+    if (!isOwner()) return;
+    const cards = state.banlist[state.selectedStatus] || [];
+    const indexes = Array.from(state.selectedOrderIndexes).sort((a, b) => a - b);
+
+    if (indexes.length < 2) {
+      setNotice(dom.editorMessage, "Select at least two cards to sort.", true);
+      return;
+    }
+
+    const activeCard = cards[state.selectedIndex] || null;
+    const sortedCards = indexes
+      .map((index) => cards[index])
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    indexes.forEach((index, position) => {
+      cards[index] = sortedCards[position];
+    });
+
+    if (activeCard) state.selectedIndex = cards.indexOf(activeCard);
+    markOrderDirty();
+    renderBanlist();
+  }
+
+  async function saveBanOrder() {
+    if (!isOwner() || !state.orderDirty) return;
+    await publishBanlist(cloneBanlist(), "Banlist order saved.");
+  }
+
+  function markOrderDirty() {
+    state.orderDirty = true;
+    setNotice(dom.editorMessage, "Order changed. Save the order when it looks right.");
+  }
+
   async function reviewRequest(id, decision) {
     try {
       await window.CCF_API.request(`/api/admin/banlist/requests/${id}/${decision}`, { method: "POST", body: {} });
@@ -450,6 +715,22 @@
       await window.CCF_API.request(`/api/admin/users/${id}`, { method: "PATCH", body: patch });
       await loadUsers();
       setNotice(dom.editorMessage, "Account updated.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function resetUserPassword(user) {
+    if (!isOwner()) return;
+    if (!confirm(`Reset password for ${user.email}?`)) return;
+
+    try {
+      const data = await window.CCF_API.request(`/api/admin/users/${user.id}/reset-password`, {
+        method: "POST",
+        body: {}
+      });
+      await loadUsers();
+      setNotice(dom.editorMessage, `Temporary password for ${user.email}: ${data.temporaryPassword}`);
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
@@ -508,6 +789,23 @@
     renderBanlist();
   }
 
+  async function publishBanlist(next, message) {
+    try {
+      const data = await window.CCF_API.request("/api/admin/banlist", {
+        method: "PUT",
+        body: { banlist: next }
+      });
+      state.banlist = normaliseBanlist(data.banlist);
+      state.orderDirty = false;
+      setNotice(dom.editorMessage, message || "Banlist saved.");
+      renderBanlist();
+      return true;
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+      return false;
+    }
+  }
+
   async function saveDirectly() {
     if (!isOwner()) return;
     const card = formCard();
@@ -518,20 +816,14 @@
       next[state.selectedStatus].splice(state.selectedIndex, 1);
     }
     next[dom.cardStatus.value].push(card);
-    sortBanlist(next);
 
-    try {
-      const data = await window.CCF_API.request("/api/admin/banlist", {
-        method: "PUT",
-        body: { banlist: next }
-      });
-      state.banlist = normaliseBanlist(data.banlist);
+    const saved = await publishBanlist(next, "Banlist saved.");
+    if (saved) {
       state.selectedStatus = dom.cardStatus.value;
+      dom.banStatusFilter.value = state.selectedStatus;
       state.selectedIndex = findCardIndex(state.banlist[state.selectedStatus], card.name);
+      state.selectedOrderIndexes.clear();
       renderBanlist();
-      setNotice(dom.editorMessage, "Banlist saved.");
-    } catch (error) {
-      setNotice(dom.editorMessage, error.message, true);
     }
   }
 
@@ -543,18 +835,12 @@
     const next = cloneBanlist();
     next[state.selectedStatus].splice(state.selectedIndex, 1);
 
-    try {
-      const data = await window.CCF_API.request("/api/admin/banlist", {
-        method: "PUT",
-        body: { banlist: next }
-      });
-      state.banlist = normaliseBanlist(data.banlist);
+    const saved = await publishBanlist(next, "Card deleted.");
+    if (saved) {
       state.selectedIndex = -1;
+      state.selectedOrderIndexes.clear();
       clearForm();
       renderBanlist();
-      setNotice(dom.editorMessage, "Card deleted.");
-    } catch (error) {
-      setNotice(dom.editorMessage, error.message, true);
     }
   }
 
@@ -640,14 +926,7 @@
           }))
         : [];
     });
-    sortBanlist(banlist);
     return banlist;
-  }
-
-  function sortBanlist(banlist) {
-    STATUSES.forEach((status) => {
-      banlist[status].sort((a, b) => a.name.localeCompare(b.name));
-    });
   }
 
   function findCardIndex(cards, name) {

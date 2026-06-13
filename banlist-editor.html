@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Banlist Editor</title>
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="banlist-editor.js?v=4" defer></script>
+  <script src="banlist-editor.js?v=8" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -57,6 +57,7 @@
         </div>
         <div class="action-row">
           <button id="loginButton" class="primary" type="button">Log In</button>
+          <button id="forgotPasswordButton" type="button">Forgot Password</button>
         </div>
       </div>
 
@@ -163,6 +164,17 @@
                 </select>
               </label>
             </div>
+            <div class="ban-order-toolbar owner-only">
+              <button id="moveBanCardUp" type="button">Up</button>
+              <button id="moveBanCardDown" type="button">Down</button>
+              <button id="sortSelectedBanCards" type="button">A-Z Selected</button>
+              <button id="clearBanSelection" type="button">Clear</button>
+              <button id="saveBanOrder" class="primary" type="button">Save Order</button>
+            </div>
+            <div class="result-meta ban-selection-meta">
+              <span id="banSelectionCount">0 selected</span>
+              <strong id="banOrderState">Saved order</strong>
+            </div>
             <div id="banCardList" class="editor-list"></div>
           </aside>
 
@@ -178,42 +190,50 @@
               </label>
               <div id="officialCardResults" class="official-card-results"></div>
             </div>
-            <div class="form-grid">
-              <label class="field">
-                <span>Source</span>
-                <select id="cardSource">
-                  <option value="custom">Custom</option>
-                  <option value="official">Official</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Official ID</span>
-                <input id="officialId" type="text" />
-              </label>
-              <label class="field">
-                <span>Name</span>
-                <input id="cardName" type="text" />
-              </label>
-              <label class="field">
-                <span>Section</span>
-                <select id="cardStatus">
-                  <option value="forbidden">Forbidden</option>
-                  <option value="limited">Limited</option>
-                  <option value="semi_limited">Semi-Limited</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Type</span>
-                <input id="cardType" type="text" />
-              </label>
-              <label class="field">
-                <span>Image URL</span>
-                <input id="cardImage" type="url" />
-              </label>
-              <label class="field span-2">
-                <span>Request Note</span>
-                <textarea id="requestNote"></textarea>
-              </label>
+            <div class="ban-edit-grid">
+              <div class="form-grid">
+                <label class="field">
+                  <span>Source</span>
+                  <select id="cardSource">
+                    <option value="custom">Custom</option>
+                    <option value="official">Official</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Official ID</span>
+                  <input id="officialId" type="text" />
+                </label>
+                <label class="field">
+                  <span>Name</span>
+                  <input id="cardName" type="text" />
+                </label>
+                <label class="field">
+                  <span>Section</span>
+                  <select id="cardStatus">
+                    <option value="forbidden">Forbidden</option>
+                    <option value="limited">Limited</option>
+                    <option value="semi_limited">Semi-Limited</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Type</span>
+                  <input id="cardType" type="text" />
+                </label>
+                <label class="field">
+                  <span>Image URL</span>
+                  <input id="cardImage" type="url" />
+                </label>
+                <label class="field span-2">
+                  <span>Request Note</span>
+                  <textarea id="requestNote"></textarea>
+                </label>
+              </div>
+              <aside class="ban-form-preview">
+                <div id="banFormArt" class="card-art missing"></div>
+                <span id="banFormBadge" class="ban-badge forbidden">Forbidden</span>
+                <strong id="banFormName">No card selected</strong>
+                <small id="banFormType">Card</small>
+              </aside>
             </div>
             <div class="action-row">
               <button id="newBanCard" type="button">New</button>
@@ -224,6 +244,14 @@
             <div id="editorMessage" class="notice hidden"></div>
           </section>
         </div>
+
+        <section class="tool-surface editor-panel ban-live-preview">
+          <div class="result-meta">
+            <span id="banPreviewTitle">Forbidden Preview</span>
+            <strong id="banPreviewCount">0 cards</strong>
+          </div>
+          <div id="banVisualPreview" class="ban-card-grid"></div>
+        </section>
       </section>
 
       <section id="requestsView" class="admin-view hidden">

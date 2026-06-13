@@ -875,6 +875,79 @@ h3 {
   font-weight: 750;
 }
 
+.ban-order-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ban-selection-meta {
+  margin-top: 10px;
+}
+
+.visual-ban-row {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  padding: 6px;
+}
+
+.visual-ban-row.active,
+.visual-ban-row.selected {
+  border-color: var(--gold);
+}
+
+.ban-row-picker {
+  min-width: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-strong);
+  display: grid;
+  place-items: center;
+}
+
+.ban-row-picker input {
+  accent-color: var(--gold);
+}
+
+.ban-row-card {
+  min-width: 0;
+  min-height: 64px;
+  justify-content: flex-start;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.ban-row-card .official-card-thumb {
+  width: 42px;
+  height: 58px;
+}
+
+.ban-row-card span:last-child {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.ban-row-card strong,
+.ban-row-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ban-row-card small {
+  color: var(--muted);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1026,6 +1099,50 @@ h3 {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.ban-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 14px;
+  align-items: start;
+}
+
+.ban-form-preview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ban-form-preview .card-art {
+  min-height: 236px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.ban-form-preview .card-art img {
+  min-height: 236px;
+}
+
+.ban-form-preview strong,
+.ban-form-preview small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ban-live-preview {
+  margin-top: 16px;
+}
+
+.ban-live-preview .ban-card.selected {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.reset-request-text {
+  color: var(--gold) !important;
+  font-weight: 850;
 }
 
 .chat-panel {
@@ -1228,7 +1345,8 @@ h3 {
   .home-hero,
   .database-layout,
   .editor-layout,
-  .database-editor-grid {
+  .database-editor-grid,
+  .ban-edit-grid {
     grid-template-columns: 1fr;
   }
 
