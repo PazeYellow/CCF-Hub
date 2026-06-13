@@ -36,7 +36,7 @@
       "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
       "refreshRequests", "chatMessages", "chatInput", "sendChatButton", "refreshChat",
-      "userList", "refreshUsers"
+      "userList", "refreshUsers", "accountMessage"
     ].forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -275,7 +275,7 @@
       state.users = data.users || [];
       renderUsers();
     } catch (error) {
-      setNotice(dom.editorMessage, error.message, true);
+      setAccountNotice(error.message, true);
     }
   }
 
@@ -787,9 +787,9 @@
     try {
       await window.CCF_API.request(`/api/admin/users/${id}`, { method: "PATCH", body: patch });
       await loadUsers();
-      setNotice(dom.editorMessage, "Account updated.");
+      setAccountNotice("Account updated.");
     } catch (error) {
-      setNotice(dom.editorMessage, error.message, true);
+      setAccountNotice(error.message, true);
     }
   }
 
@@ -803,9 +803,9 @@
         body: {}
       });
       await loadUsers();
-      setNotice(dom.editorMessage, `Temporary password for ${user.email}: ${data.temporaryPassword}`);
+      setAccountNotice(`Temporary password for ${user.email}: ${data.temporaryPassword}`);
     } catch (error) {
-      setNotice(dom.editorMessage, error.message, true);
+      setAccountNotice(error.message, true);
     }
   }
 
@@ -1014,6 +1014,10 @@
     element.textContent = message || "";
     element.classList.toggle("hidden", !message);
     element.classList.toggle("danger", Boolean(danger));
+  }
+
+  function setAccountNotice(message, danger) {
+    setNotice(dom.accountMessage || dom.editorMessage, message, danger);
   }
 
   function escapeHtml(value) {
