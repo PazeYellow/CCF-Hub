@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Database Editor</title>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+  <link rel="stylesheet" href="styles.css?v=12" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="database-editor.js?v=7" defer></script>
+  <script src="database-editor.js?v=12" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -72,6 +73,21 @@
           <button id="logoutButton" type="button">Log Out</button>
         </div>
       </div>
+
+      <section class="tool-surface editor-panel schedule-panel owner-only">
+        <div class="result-meta">
+          <span>Scheduled Database Publishing</span>
+          <button id="refreshDatabaseSchedules" type="button">Refresh</button>
+        </div>
+        <div class="schedule-row">
+          <label class="field">
+            <span>Publish Time</span>
+            <input id="databaseScheduleAt" type="datetime-local" />
+          </label>
+          <button id="scheduleDatabasePublish" class="primary" type="button">Schedule</button>
+        </div>
+        <div id="databaseScheduleList" class="admin-list compact-list"></div>
+      </section>
 
       <div class="editor-layout">
         <aside class="tool-surface editor-panel sticky">

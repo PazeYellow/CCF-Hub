@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CCF Banlist Editor</title>
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+  <link rel="stylesheet" href="styles.css?v=12" />
   <script src="site.js" defer></script>
   <script src="api-config.js?v=2" defer></script>
   <script src="api-client.js?v=4" defer></script>
-  <script src="banlist-editor.js?v=10" defer></script>
+  <script src="banlist-editor.js?v=12" defer></script>
 </head>
 <body data-page="editor">
   <header class="site-header">
@@ -245,6 +246,20 @@
               <button id="deleteBanCard" class="owner-only" type="button">Delete</button>
               <button id="submitBanRequest" type="button">Submit Request</button>
             </div>
+            <section class="schedule-panel owner-only">
+              <div class="result-meta">
+                <span>Scheduled Publishing</span>
+                <button id="refreshBanSchedules" type="button">Refresh</button>
+              </div>
+              <div class="schedule-row">
+                <label class="field">
+                  <span>Publish Time</span>
+                  <input id="banScheduleAt" type="datetime-local" />
+                </label>
+                <button id="scheduleBanPublish" class="primary" type="button">Schedule</button>
+              </div>
+              <div id="banScheduleList" class="admin-list compact-list"></div>
+            </section>
             <div id="editorMessage" class="notice hidden"></div>
           </aside>
         </div>

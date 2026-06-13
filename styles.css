@@ -727,6 +727,10 @@ h3 {
   align-items: start;
 }
 
+.banlist-editor-shell > * {
+  min-width: 0;
+}
+
 .banlist-editor-board {
   min-width: 0;
 }
@@ -796,6 +800,10 @@ h3 {
 
 .ban-editor-inspector .ban-edit-grid {
   grid-template-columns: 1fr;
+}
+
+.ban-editor-inspector {
+  min-width: 0;
 }
 
 .ban-badge {
@@ -929,6 +937,15 @@ h3 {
   top: 86px;
 }
 
+@media (min-width: 921px) {
+  .editor-panel.sticky,
+  .database-preview {
+    max-height: calc(100vh - 104px);
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
 .editor-list {
   display: grid;
   gap: 8px;
@@ -958,6 +975,12 @@ h3 {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.ban-order-toolbar button,
+.admin-session .action-row button,
+.editor-panel > .action-row button {
+  min-height: 42px;
 }
 
 .ban-selection-meta {
@@ -1124,6 +1147,37 @@ h3 {
   margin: 4px 0 0;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.schedule-panel {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.compact-list {
+  gap: 8px;
+  margin-top: 0;
+}
+
+.compact-list .empty-state {
+  padding: 14px;
+}
+
+.schedule-item {
+  gap: 10px;
+}
+
+.schedule-item .action-row {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
 }
 
 .official-search-panel {
@@ -1328,6 +1382,10 @@ h3 {
   align-items: start;
 }
 
+.database-editor-grid > * {
+  min-width: 0;
+}
+
 .database-preview {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1447,6 +1505,14 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .schedule-row {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-row button {
+    width: 100%;
+  }
+
   .admin-session,
   .admin-list-item,
   .chat-composer {
@@ -1457,6 +1523,24 @@ h3 {
   .editor-panel.sticky,
   .database-preview {
     position: static;
+  }
+
+  .database-preview {
+    order: -1;
+  }
+
+  .ban-order-toolbar button,
+  .admin-session .action-row > *,
+  .editor-panel > .action-row button {
+    flex: 1 1 150px;
+  }
+
+  .schedule-item .action-row {
+    justify-content: stretch;
+  }
+
+  .schedule-item .action-row button {
+    flex: 1 1 130px;
   }
 
   .detail-panel {
@@ -1506,6 +1590,35 @@ h3 {
   .form-grid,
   .detail-panel {
     grid-template-columns: 1fr;
+  }
+
+  .page-intro .action-row,
+  .admin-session .action-row,
+  .editor-panel > .action-row,
+  .ban-order-toolbar {
+    align-items: stretch;
+  }
+
+  .page-intro .action-row > *,
+  .admin-session .action-row > *,
+  .editor-panel > .action-row > *,
+  .ban-order-toolbar > * {
+    flex: 1 1 100%;
+  }
+
+  .result-meta {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ban-form-preview {
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .ban-form-preview .card-art,
+  .ban-form-preview .card-art img {
+    min-height: 156px;
   }
 
   .status-tabs {

@@ -17,6 +17,7 @@
     requests: [],
     chatMessages: [],
     users: [],
+    banSchedules: [],
     officialSearchTimer: null
   };
 
@@ -36,7 +37,8 @@
       "cardStatus", "cardType", "cardImage", "requestNote", "newBanCard",
       "saveBanCard", "deleteBanCard", "submitBanRequest", "editorMessage", "requestList",
       "refreshRequests", "chatMessages", "chatInput", "sendChatButton", "refreshChat",
-      "userList", "refreshUsers", "accountMessage"
+      "userList", "refreshUsers", "accountMessage", "banScheduleAt", "scheduleBanPublish",
+      "refreshBanSchedules", "banScheduleList"
     ].forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -75,6 +77,8 @@
     dom.sortSelectedBanCards.addEventListener("click", sortSelectedBanCards);
     dom.clearBanSelection.addEventListener("click", clearBanSelection);
     dom.saveBanOrder.addEventListener("click", saveBanOrder);
+    dom.scheduleBanPublish.addEventListener("click", scheduleBanPublish);
+    dom.refreshBanSchedules.addEventListener("click", loadBanSchedules);
     dom.refreshRequests.addEventListener("click", loadRequests);
     dom.refreshChat.addEventListener("click", loadChat);
     dom.sendChatButton.addEventListener("click", sendChatMessage);
@@ -96,6 +100,7 @@
         showAdminTab(button.getAttribute("data-admin-tab"));
       });
     });
+    document.addEventListener("keydown", handleKeyboardShortcuts);
   }
 
   async function boot() {
@@ -215,7 +220,10 @@
     await loadBanlist();
     await loadRequests();
     await loadChat();
-    if (isOwner()) await loadUsers();
+    if (isOwner()) {
+      await loadUsers();
+      await loadBanSchedules();
+    }
   }
 
   async function loadBanlist() {
@@ -279,6 +287,17 @@
     }
   }
 
+  async function loadBanSchedules() {
+    if (!isOwner()) return;
+    try {
+      const data = await window.CCF_API.request("/api/admin/scheduled-publishes?target=banlist");
+      state.banSchedules = data.schedules || [];
+      renderBanSchedules();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
   function showLoggedOut(message) {
     state.user = null;
     dom.authPanel.classList.remove("hidden");
@@ -326,6 +345,62 @@
 
     if (tab === "chat") {
       loadChat();
+    }
+  }
+
+  function handleKeyboardShortcuts(event) {
+    if (dom.adminWorkspace.classList.contains("hidden")) return;
+    const command = event.ctrlKey || event.metaKey;
+
+    if (command && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      if (state.orderDirty) {
+        saveBanOrder();
+      } else {
+        saveDirectly();
+      }
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "n") {
+      event.preventDefault();
+      state.selectedIndex = -1;
+      clearForm();
+      dom.cardStatus.value = state.selectedStatus;
+      renderBanlist();
+      dom.cardName.focus();
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      dom.banSearch.focus();
+      dom.banSearch.select();
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      dom.officialCardSearch.focus();
+      dom.officialCardSearch.select();
+      return;
+    }
+
+    if (event.altKey && event.key === "ArrowUp") {
+      event.preventDefault();
+      moveBanCards(-1);
+      return;
+    }
+
+    if (event.altKey && event.key === "ArrowDown") {
+      event.preventDefault();
+      moveBanCards(1);
+      return;
+    }
+
+    if (event.key === "Delete" && !isTypingTarget(event.target)) {
+      event.preventDefault();
+      deleteDirectly();
     }
   }
 
@@ -636,6 +711,47 @@
     });
   }
 
+  function renderBanSchedules() {
+    dom.banScheduleList.innerHTML = "";
+    const schedules = state.banSchedules.filter((schedule) => schedule.status === "pending");
+
+    if (!schedules.length) {
+      dom.banScheduleList.innerHTML = '<div class="empty-state">No pending banlist publishes.</div>';
+      return;
+    }
+
+    schedules.forEach((schedule) => {
+      dom.banScheduleList.appendChild(scheduleItem(schedule, async (action) => {
+        await runScheduleAction(schedule.id, action, "banlist");
+      }));
+    });
+  }
+
+  function scheduleItem(schedule, action) {
+    const item = document.createElement("article");
+    item.className = "admin-list-item schedule-item";
+    item.innerHTML = `
+      <div>
+        <strong>${escapeHtml(schedule.title || "Scheduled publish")}</strong>
+        <p>${escapeHtml(schedule.summary || "")}</p>
+        <p>${escapeHtml(formatFullDate(schedule.publishAt))} / ${escapeHtml(schedule.status)}</p>
+      </div>
+      <span class="pill ${schedule.status === "pending" ? "gold" : schedule.status === "published" ? "aqua" : "rose"}">${escapeHtml(schedule.target)}</span>
+    `;
+
+    if (schedule.status === "pending") {
+      const actions = document.createElement("div");
+      actions.className = "action-row";
+      actions.append(
+        userButton("Publish Now", () => action("publish-now")),
+        userButton("Cancel", () => action("cancel"))
+      );
+      item.appendChild(actions);
+    }
+
+    return item;
+  }
+
   function renderChat() {
     dom.chatMessages.innerHTML = "";
 
@@ -765,6 +881,48 @@
   async function saveBanOrder() {
     if (!isOwner() || !state.orderDirty) return;
     await publishBanlist(cloneBanlist(), "Banlist order saved.");
+  }
+
+  async function scheduleBanPublish() {
+    if (!isOwner()) return;
+    const publishAt = localDateTimeToIso(dom.banScheduleAt.value);
+    if (!publishAt) {
+      setNotice(dom.editorMessage, "Choose a publish time first.", true);
+      return;
+    }
+
+    try {
+      await window.CCF_API.request("/api/admin/scheduled-publishes", {
+        method: "POST",
+        body: {
+          target: "banlist",
+          title: `${STATUS_LABELS[state.selectedStatus]} banlist publish`,
+          publishAt,
+          payload: cloneBanlist()
+        }
+      });
+      dom.banScheduleAt.value = "";
+      await loadBanSchedules();
+      setNotice(dom.editorMessage, "Banlist publish scheduled.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function runScheduleAction(id, action, target) {
+    try {
+      await window.CCF_API.request(`/api/admin/scheduled-publishes/${id}/${action}`, {
+        method: "POST",
+        body: {}
+      });
+      if (target === "banlist") {
+        await loadBanlist();
+        await loadBanSchedules();
+      }
+      setNotice(dom.editorMessage, action === "cancel" ? "Scheduled publish cancelled." : "Scheduled publish applied.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
   }
 
   function markOrderDirty() {
@@ -1050,5 +1208,27 @@
       hour: "2-digit",
       minute: "2-digit"
     });
+  }
+
+  function formatFullDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function localDateTimeToIso(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+
+  function isTypingTarget(target) {
+    return ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName) || target?.isContentEditable;
   }
 })();

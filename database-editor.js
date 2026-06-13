@@ -5,6 +5,7 @@
     cards: [],
     selectedIndex: -1,
     dirty: false,
+    databaseSchedules: [],
     officialSearchTimer: null
   };
 
@@ -22,7 +23,8 @@
       "statusFilter", "sourceFilter", "cardList", "editorStatus", "selectedIndexMeta", "cardCount",
       "dirtyState", "officialCardSearch", "officialCardResults", "newCard", "duplicateCard",
       "saveLocal", "deleteCard", "editorMessage", "imagePreview", "previewName", "previewPills",
-      "previewText", "monsterAbilities", "linkArrows"
+      "previewText", "monsterAbilities", "linkArrows", "databaseScheduleAt", "scheduleDatabasePublish",
+      "refreshDatabaseSchedules", "databaseScheduleList"
     ].concat(fields).forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -44,6 +46,8 @@
     dom.duplicateCard.addEventListener("click", duplicateCard);
     dom.saveLocal.addEventListener("click", () => saveDraft(true));
     dom.deleteCard.addEventListener("click", deleteCard);
+    dom.scheduleDatabasePublish.addEventListener("click", scheduleDatabasePublish);
+    dom.refreshDatabaseSchedules.addEventListener("click", loadDatabaseSchedules);
 
     fields.forEach((field) => {
       dom[field].addEventListener("input", renderPreviewFromForm);
@@ -58,6 +62,7 @@
       renderPreviewFromForm();
     }));
     getChecks("linkArrows").forEach((input) => input.addEventListener("change", renderPreviewFromForm));
+    document.addEventListener("keydown", handleKeyboardShortcuts);
   }
 
   async function boot() {
@@ -70,6 +75,7 @@
       state.user = await window.CCF_API.me();
       showLoggedIn();
       await loadDatabase();
+      if (isOwner()) await loadDatabaseSchedules();
     } catch (error) {
       window.CCF_API.setToken("");
       showLoggedOut(error.message);
@@ -83,6 +89,7 @@
       dom.loginPassword.value = "";
       showLoggedIn();
       await loadDatabase();
+      if (isOwner()) await loadDatabaseSchedules();
     } catch (error) {
       setNotice(dom.authMessage, error.message, true);
     }
@@ -115,8 +122,57 @@
     const owner = isOwner();
     dom.saveLive.disabled = !owner;
     dom.deleteCard.disabled = !owner;
+    document.querySelectorAll(".owner-only").forEach((element) => {
+      element.classList.toggle("hidden", !owner);
+    });
     if (!owner) {
       setNotice(dom.editorMessage, "Admins can review and draft locally here. Owners publish database changes.");
+    }
+  }
+
+  function handleKeyboardShortcuts(event) {
+    if (dom.editorWorkspace.classList.contains("hidden")) return;
+    const command = event.ctrlKey || event.metaKey;
+
+    if (command && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      if (event.shiftKey) {
+        saveLive();
+      } else {
+        saveDraft(true);
+      }
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "n") {
+      event.preventDefault();
+      newCard();
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "d" && !isTypingTarget(event.target)) {
+      event.preventDefault();
+      duplicateCard();
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      dom.cardSearch.focus();
+      dom.cardSearch.select();
+      return;
+    }
+
+    if (command && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      dom.officialCardSearch.focus();
+      dom.officialCardSearch.select();
+      return;
+    }
+
+    if (event.key === "Delete" && !isTypingTarget(event.target)) {
+      event.preventDefault();
+      deleteCard();
     }
   }
 
@@ -140,6 +196,56 @@
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
+  }
+
+  async function loadDatabaseSchedules() {
+    if (!isOwner()) return;
+    try {
+      const data = await window.CCF_API.request("/api/admin/scheduled-publishes?target=database");
+      state.databaseSchedules = data.schedules || [];
+      renderDatabaseSchedules();
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  function renderDatabaseSchedules() {
+    dom.databaseScheduleList.innerHTML = "";
+    const schedules = state.databaseSchedules.filter((schedule) => schedule.status === "pending");
+
+    if (!schedules.length) {
+      dom.databaseScheduleList.innerHTML = '<div class="empty-state">No pending database publishes.</div>';
+      return;
+    }
+
+    schedules.forEach((schedule) => {
+      dom.databaseScheduleList.appendChild(scheduleItem(schedule));
+    });
+  }
+
+  function scheduleItem(schedule) {
+    const item = document.createElement("article");
+    item.className = "admin-list-item schedule-item";
+    item.innerHTML = `
+      <div>
+        <strong>${escapeHtml(schedule.title || "Scheduled publish")}</strong>
+        <p>${escapeHtml(schedule.summary || "")}</p>
+        <p>${escapeHtml(formatFullDate(schedule.publishAt))} / ${escapeHtml(schedule.status)}</p>
+      </div>
+      <span class="pill ${schedule.status === "pending" ? "gold" : schedule.status === "published" ? "aqua" : "rose"}">${escapeHtml(schedule.target)}</span>
+    `;
+
+    if (schedule.status === "pending") {
+      const actions = document.createElement("div");
+      actions.className = "action-row";
+      actions.append(
+        smallButton("Publish Now", () => runScheduleAction(schedule.id, "publish-now")),
+        smallButton("Cancel", () => runScheduleAction(schedule.id, "cancel"))
+      );
+      item.appendChild(actions);
+    }
+
+    return item;
   }
 
   function hydrateFilters() {
@@ -278,6 +384,50 @@
       hydrateFilters();
       renderList();
       setNotice(dom.editorMessage, "Database published to Cloudflare.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function scheduleDatabasePublish() {
+    if (!isOwner()) return;
+    saveDraft(false);
+    const publishAt = localDateTimeToIso(dom.databaseScheduleAt.value);
+    if (!publishAt) {
+      setNotice(dom.editorMessage, "Choose a publish time first.", true);
+      return;
+    }
+
+    try {
+      await window.CCF_API.request("/api/admin/scheduled-publishes", {
+        method: "POST",
+        body: {
+          target: "database",
+          title: "Database publish",
+          publishAt,
+          payload: {
+            schemaVersion: state.database.schemaVersion || 1,
+            cards: state.cards
+          }
+        }
+      });
+      dom.databaseScheduleAt.value = "";
+      await loadDatabaseSchedules();
+      setNotice(dom.editorMessage, "Database publish scheduled.");
+    } catch (error) {
+      setNotice(dom.editorMessage, error.message, true);
+    }
+  }
+
+  async function runScheduleAction(id, action) {
+    try {
+      await window.CCF_API.request(`/api/admin/scheduled-publishes/${id}/${action}`, {
+        method: "POST",
+        body: {}
+      });
+      if (action === "publish-now") await loadDatabase();
+      await loadDatabaseSchedules();
+      setNotice(dom.editorMessage, action === "cancel" ? "Scheduled publish cancelled." : "Scheduled publish applied.");
     } catch (error) {
       setNotice(dom.editorMessage, error.message, true);
     }
@@ -647,6 +797,36 @@
     element.textContent = message || "";
     element.classList.toggle("hidden", !message);
     element.classList.toggle("danger", Boolean(danger));
+  }
+
+  function smallButton(label, action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", action);
+    return button;
+  }
+
+  function formatFullDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function localDateTimeToIso(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+
+  function isTypingTarget(target) {
+    return ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName) || target?.isContentEditable;
   }
 
   function escapeHtml(value) {
